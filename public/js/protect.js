@@ -54,6 +54,11 @@
 
     // Strategy A: Window Size (Docked DevTools)
     function checkWindowSize() {
+        // Skip for mobile devices (they have dynamic viewports)
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+            return;
+        }
+
         if (window.Firebug && window.Firebug.chrome && window.Firebug.chrome.isInitialized) {
             nuke('Firebug Detected');
         }
