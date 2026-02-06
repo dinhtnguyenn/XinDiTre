@@ -13,14 +13,38 @@
 </head>
 
 <body class="admin-page">
-    <div class="container">
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal show">
+        <div class="modal-content" style="max-width: 400px;">
+            <h2 class="modal-title" style="text-align: center;">🔐 Đăng nhập Admin</h2>
+            <div class="modal-body">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="password">Mật khẩu</label>
+                        <input type="password" id="password" name="password" placeholder="Nhập mật khẩu..." required
+                            autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn btn-submit" style="margin-top: 16px;">
+                        <span>🔓</span> Đăng nhập
+                    </button>
+                </form>
+                <p id="loginError" style="color: #ef4444; text-align: center; margin-top: 12px; display: none;"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminContent" class="container" style="display: none;">
         <header class="header">
             <div class="logo">
                 <span class="logo-icon">👨‍🏫</span>
                 <h1>Trang Quản Lý</h1>
             </div>
             <p class="subtitle">Danh sách yêu cầu xin đi trễ của sinh viên</p>
-            <a href="index.html" class="back-link">← Về trang sinh viên</a>
+            <div style="margin-top: 12px;">
+                <a href="index.html" class="back-link">← Về trang sinh viên</a>
+                <span style="margin: 0 10px; color: rgba(255,255,255,0.5);">|</span>
+                <a href="#" id="logoutBtn" class="back-link">🚪 Đăng xuất</a>
+            </div>
         </header>
 
         <main class="main-content">

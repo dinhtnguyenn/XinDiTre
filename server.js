@@ -7,10 +7,42 @@ const { initDatabase, createRequest, getRequests, deleteRequest, uploadPhoto } =
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Cấu hình Multer để xử lý upload (lưu trong memory)
+// ============================================
+// Cấu hình Admin Password
+// ============================================
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Dinh6997@@';
+
+// Middleware kiểm tra xác thực admin
+function requireAdminAuth(req, res, next) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+        return res.status(401).json({
+            success: false,
+            message: 'Cần đăng nhập để truy cập!'
+        });
+    }
+
+    // Basic Auth: "Basic base64(password)"
+    const token = authHeader.split(' ')[1];
+    const password = Buffer.from(token, 'base64').toString();
+
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(401).json({
+            success: false,
+            message: 'Mật khẩu không đúng!'
+        });
+    }
+
+    next();
+}
+
+// ============================================
+// Cấu hình Multer
+// ============================================
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 5 * 1024 * 1024 }, // Max 5MB
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         if (file.mimetype.startsWith('image/')) {
             cb(null, true);
@@ -20,18 +52,40 @@ const upload = multer({
     }
 });
 
+// ============================================
 // Middleware
+// ============================================
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// API: Sinh viên gửi yêu cầu xin đi trễ
+// ============================================
+// API: Đăng nhập admin
+// ============================================
+app.post('/api/admin/login', (req, res) => {
+    const { password } = req.body;
+
+    if (password === ADMIN_PASSWORD) {
+        res.json({
+            success: true,
+            message: 'Đăng nhập thành công!'
+        });
+    } else {
+        res.status(401).json({
+            success: false,
+            message: 'Mật khẩu không đúng!'
+        });
+    }
+});
+
+// ============================================
+// API: Sinh viên gửi yêu cầu (PUBLIC)
+// ============================================
 app.post('/api/late-requests', upload.single('photo'), async (req, res) => {
     try {
         const { mssv, fullname, class_session, reason, latitude, longitude, address } = req.body;
 
-        // Validate dữ liệu
         if (!mssv || !fullname || !class_session || !reason) {
             return res.status(400).json({
                 success: false,
@@ -39,7 +93,6 @@ app.post('/api/late-requests', upload.single('photo'), async (req, res) => {
             });
         }
 
-        // Upload ảnh lên Supabase Storage
         let photo_url = null;
         if (req.file) {
             const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -47,7 +100,6 @@ app.post('/api/late-requests', upload.single('photo'), async (req, res) => {
             photo_url = await uploadPhoto(req.file.buffer, fileName);
         }
 
-        // Lưu vào database
         const result = await createRequest({
             mssv,
             fullname,
@@ -74,8 +126,10 @@ app.post('/api/late-requests', upload.single('photo'), async (req, res) => {
     }
 });
 
-// API: Admin lấy danh sách yêu cầu
-app.get('/api/late-requests', async (req, res) => {
+// ============================================
+// API: Admin lấy danh sách (YÊU CẦU XÁC THỰC)
+// ============================================
+app.get('/api/late-requests', requireAdminAuth, async (req, res) => {
     try {
         const data = await getRequests();
         res.json({
@@ -91,8 +145,10 @@ app.get('/api/late-requests', async (req, res) => {
     }
 });
 
-// API: Admin xóa yêu cầu
-app.delete('/api/late-requests/:id', async (req, res) => {
+// ============================================
+// API: Admin xóa yêu cầu (YÊU CẦU XÁC THỰC)
+// ============================================
+app.delete('/api/late-requests/:id', requireAdminAuth, async (req, res) => {
     try {
         const { id } = req.params;
         await deleteRequest(id);
@@ -103,13 +159,16 @@ app.delete('/api/late-requests/:id', async (req, res) => {
     }
 });
 
+// ============================================
 // Khởi động server
+// ============================================
 initDatabase().then(() => {
     app.listen(PORT, () => {
         console.log(`
     🚀 Server đang chạy tại: http://localhost:${PORT}
     📱 Trang sinh viên: http://localhost:${PORT}
     👨‍🏫 Trang admin: http://localhost:${PORT}/admin.html
+    🔐 Mật khẩu admin: ${ADMIN_PASSWORD}
     ☁️  Database: Supabase Cloud
         `);
     });

@@ -1,4 +1,74 @@
 // ============================================
+// Authentication
+// ============================================
+let authToken = null;
+
+// Check if already logged in
+function checkAuth() {
+    const savedToken = localStorage.getItem('adminToken');
+    if (savedToken) {
+        authToken = savedToken;
+        showAdminContent();
+        fetchRequests();
+    }
+}
+
+// Login
+async function handleLogin(e) {
+    e.preventDefault();
+
+    const password = document.getElementById('password').value;
+    const errorEl = document.getElementById('loginError');
+
+    try {
+        const response = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Save token (base64 encoded password)
+            authToken = btoa(password);
+            localStorage.setItem('adminToken', authToken);
+
+            showAdminContent();
+            fetchRequests();
+        } else {
+            errorEl.textContent = result.message;
+            errorEl.style.display = 'block';
+        }
+    } catch (error) {
+        errorEl.textContent = 'Không thể kết nối đến server!';
+        errorEl.style.display = 'block';
+    }
+}
+
+// Logout
+function logout() {
+    authToken = null;
+    localStorage.removeItem('adminToken');
+    document.getElementById('loginModal').classList.add('show');
+    document.getElementById('adminContent').style.display = 'none';
+    document.getElementById('password').value = '';
+}
+
+// Show admin content
+function showAdminContent() {
+    document.getElementById('loginModal').classList.remove('show');
+    document.getElementById('adminContent').style.display = 'flex';
+}
+
+// Get auth headers
+function getAuthHeaders() {
+    return {
+        'Authorization': `Basic ${authToken}`
+    };
+}
+
+// ============================================
 // Variables & State
 // ============================================
 let requests = [];
@@ -32,7 +102,16 @@ async function fetchRequests() {
     `;
 
     try {
-        const response = await fetch('/api/late-requests');
+        const response = await fetch('/api/late-requests', {
+            headers: getAuthHeaders()
+        });
+
+        if (response.status === 401) {
+            logout();
+            showToast('Phiên đăng nhập hết hạn!', 'error');
+            return;
+        }
+
         const result = await response.json();
 
         if (result.success) {
@@ -179,8 +258,15 @@ async function deleteRequest() {
 
     try {
         const response = await fetch(`/api/late-requests/${currentRequest.id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: getAuthHeaders()
         });
+
+        if (response.status === 401) {
+            logout();
+            showToast('Phiên đăng nhập hết hạn!', 'error');
+            return;
+        }
 
         const result = await response.json();
 
@@ -243,6 +329,11 @@ function showToast(message, type = 'info') {
 // ============================================
 // Event Listeners
 // ============================================
+document.getElementById('loginForm').addEventListener('submit', handleLogin);
+document.getElementById('logoutBtn').addEventListener('click', (e) => {
+    e.preventDefault();
+    logout();
+});
 refreshBtn.addEventListener('click', fetchRequests);
 closeModal.addEventListener('click', closeModalFn);
 deleteBtn.addEventListener('click', deleteRequest);
@@ -265,5 +356,5 @@ document.addEventListener('keydown', (e) => {
 // Initialize
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
-    fetchRequests();
+    checkAuth();
 });
