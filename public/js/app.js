@@ -6,7 +6,20 @@ let photoBlob = null;
 let latitude = null;
 let longitude = null;
 let address = null;
-let isAutoFilled = false; // Track if fullname was auto-filled
+let isAutoFilled = false;
+let miniMap = null;
+let countdownInterval = null;
+let monthlyCount = 0;
+
+// Class schedules (phải khớp với server)
+const CLASS_SCHEDULES = {
+    'Ca 1 (07:15 - 09:15)': { hour: 7, minute: 15 },
+    'Ca 2 (09:25 - 11:25)': { hour: 9, minute: 25 },
+    'Ca 3 (12:00 - 14:00)': { hour: 12, minute: 0 },
+    'Ca 4 (14:10 - 16:10)': { hour: 14, minute: 10 },
+    'Ca 5 (16:20 - 18:20)': { hour: 16, minute: 20 },
+    'Ca 6 (18:30 - 20:30)': { hour: 18, minute: 30 }
+};
 
 // DOM Elements
 const form = document.getElementById('lateRequestForm');
@@ -36,7 +49,10 @@ const fullnameInput = document.getElementById('fullname');
 let lookupTimeout = null;
 
 async function lookupStudent(mssv) {
-    if (!mssv || mssv.length < 3) return;
+    if (!mssv || mssv.length < 3) {
+        document.getElementById('monthlyCountBox').style.display = 'none';
+        return;
+    }
 
     try {
         const response = await fetch(`/api/lookup-student/${encodeURIComponent(mssv)}`);
@@ -44,17 +60,19 @@ async function lookupStudent(mssv) {
 
         if (result.success && result.found) {
             fullnameInput.value = result.fullname;
-            fullnameInput.style.backgroundColor = '#f0fdf4'; // Light green to indicate auto-filled
+            fullnameInput.style.backgroundColor = '#f0fdf4';
             isAutoFilled = true;
             showToast(`Đã tìm thấy: ${result.fullname}`, 'success');
         } else {
-            // Reset if not found
             if (isAutoFilled) {
                 fullnameInput.value = '';
                 fullnameInput.style.backgroundColor = '';
                 isAutoFilled = false;
             }
         }
+
+        // Fetch monthly count
+        fetchMonthlyCount(mssv);
     } catch (error) {
         console.error('Lỗi lookup MSSV:', error);
     }
@@ -181,6 +199,9 @@ function getLocation() {
             locationDetails.style.display = 'block';
             addressText.textContent = address;
             coordsText.textContent = `Tọa độ: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+
+            // Show mini map
+            showMiniMap(latitude, longitude);
         },
         (error) => {
             let message = 'Không thể lấy vị trí';
@@ -357,10 +378,223 @@ captureBtn.addEventListener('click', capturePhoto);
 retakeBtn.addEventListener('click', retakePhoto);
 form.addEventListener('submit', handleSubmit);
 
+// View History Button
+document.getElementById('viewHistoryBtn').addEventListener('click', viewStudentHistory);
+
+// Close History Modal
+document.getElementById('closeHistoryModal').addEventListener('click', () => {
+    document.getElementById('historyModal').classList.remove('show');
+});
+
+document.getElementById('historyModal').addEventListener('click', (e) => {
+    if (e.target.id === 'historyModal') {
+        document.getElementById('historyModal').classList.remove('show');
+    }
+});
+
+// Class session change - update countdown
+document.getElementById('class_session').addEventListener('change', (e) => {
+    updateCountdown(e.target.value);
+});
+
+// ============================================
+// Monthly Count Functions
+// ============================================
+async function fetchMonthlyCount(mssv) {
+    try {
+        const response = await fetch(`/api/student-history/${encodeURIComponent(mssv)}`);
+        const result = await response.json();
+
+        if (result.success) {
+            const now = new Date();
+            const monthlyRequests = result.data.filter(req => {
+                const reqDate = new Date(req.created_at);
+                return reqDate.getMonth() === now.getMonth() && reqDate.getFullYear() === now.getFullYear();
+            });
+
+            monthlyCount = monthlyRequests.length;
+            const monthlyCountBox = document.getElementById('monthlyCountBox');
+            const monthlyCountText = document.getElementById('monthlyCountText');
+
+            if (monthlyCount > 0) {
+                monthlyCountBox.style.display = 'flex';
+                monthlyCountText.textContent = `Bạn đã xin ${monthlyCount} lần trong tháng này`;
+
+                if (monthlyCount >= 3) {
+                    monthlyCountBox.classList.add('warning');
+                } else {
+                    monthlyCountBox.classList.remove('warning');
+                }
+            } else {
+                monthlyCountBox.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('Lỗi fetch monthly count:', error);
+    }
+}
+
+// ============================================
+// Student History View
+// ============================================
+async function viewStudentHistory() {
+    const mssv = mssvInput.value.trim();
+
+    if (!mssv || mssv.length < 3) {
+        showToast('Vui lòng nhập MSSV (ít nhất 3 ký tự)!', 'error');
+        mssvInput.focus();
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/student-history/${encodeURIComponent(mssv)}`);
+        const result = await response.json();
+
+        if (result.success) {
+            if (result.data.length === 0) {
+                showToast('Không tìm thấy lịch sử xin đi trễ!', 'info');
+                return;
+            }
+
+            document.getElementById('historyMssv').textContent = mssv;
+            document.getElementById('historyStudentName').textContent = result.data[0].fullname;
+            document.getElementById('historyTotal').textContent = result.total;
+
+            const historyBody = document.getElementById('historyBody');
+            historyBody.innerHTML = result.data.map((req, index) => {
+                const statusHtml = req.is_within_deadline === true
+                    ? '<span style="color: #10b981;">✅ Trong hạn</span>'
+                    : req.is_within_deadline === false
+                        ? '<span style="color: #ef4444;">❌ Ngoài hạn</span>'
+                        : '<span style="color: #64748b;">❓ Không xác định</span>';
+
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${req.class_session}</td>
+                        <td>${new Date(req.created_at).toLocaleString('vi-VN')}</td>
+                        <td>${statusHtml}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('historyModal').classList.add('show');
+        } else {
+            showToast('Không thể tải lịch sử!', 'error');
+        }
+    } catch (error) {
+        showToast('Lỗi kết nối server!', 'error');
+    }
+}
+
+// ============================================
+// Countdown Timer
+// ============================================
+function updateCountdown(classSession) {
+    const countdownBox = document.getElementById('countdownBox');
+    const countdownTimer = document.getElementById('countdownTimer');
+
+    if (!classSession || !CLASS_SCHEDULES[classSession]) {
+        countdownBox.style.display = 'none';
+        if (countdownInterval) clearInterval(countdownInterval);
+        return;
+    }
+
+    countdownBox.style.display = 'flex';
+
+    function tick() {
+        const now = new Date();
+        const schedule = CLASS_SCHEDULES[classSession];
+
+        // Deadline = class start + 14:30
+        const deadline = new Date(now);
+        deadline.setHours(schedule.hour, schedule.minute + 14, 30, 0);
+
+        const diff = deadline - now;
+
+        if (diff <= 0) {
+            countdownTimer.textContent = 'HẾT HẠN';
+            countdownTimer.className = 'countdown-timer expired';
+        } else {
+            const minutes = Math.floor(diff / 60000);
+            const seconds = Math.floor((diff % 60000) / 1000);
+            countdownTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            if (minutes >= 10) {
+                countdownTimer.className = 'countdown-timer safe';
+            } else {
+                countdownTimer.className = 'countdown-timer';
+            }
+        }
+    }
+
+    tick();
+    if (countdownInterval) clearInterval(countdownInterval);
+    countdownInterval = setInterval(tick, 1000);
+}
+
+// ============================================
+// Mini Map
+// ============================================
+function showMiniMap(lat, lng) {
+    const container = document.getElementById('miniMapContainer');
+    container.style.display = 'block';
+
+    if (miniMap) {
+        miniMap.remove();
+    }
+
+    miniMap = L.map('miniMap').setView([lat, lng], 16);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(miniMap);
+
+    L.marker([lat, lng]).addTo(miniMap)
+        .bindPopup('📍 Vị trí của bạn')
+        .openPopup();
+}
+
+// ============================================
+// Auto Suggest Class Session
+// ============================================
+function suggestClassSession() {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTime = currentHour * 60 + currentMinute; // Convert to minutes
+
+    let suggestedSession = null;
+    let suggestedKey = null;
+
+    // Find the current or upcoming class session
+    for (const [key, schedule] of Object.entries(CLASS_SCHEDULES)) {
+        const classStart = schedule.hour * 60 + schedule.minute;
+        const deadline = classStart + 14; // 14 minutes after start
+
+        // If current time is before deadline (can still submit)
+        if (currentTime <= deadline + 30) { // 30 minutes grace for suggestion
+            if (!suggestedSession || classStart < suggestedSession) {
+                suggestedSession = classStart;
+                suggestedKey = key;
+            }
+        }
+    }
+
+    const select = document.getElementById('class_session');
+    const label = document.getElementById('suggestedSessionLabel');
+
+    if (suggestedKey) {
+        select.value = suggestedKey;
+        label.textContent = '(Gợi ý)';
+        updateCountdown(suggestedKey);
+    }
+}
+
 // ============================================
 // Initialize
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
-    // Get location on page load
     getLocation();
+    suggestClassSession();
 });

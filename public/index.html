@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="css/style.css">
 </head>
 
@@ -19,6 +20,12 @@
                 <h1>Xin Đi Trễ</h1>
             </div>
             <p class="subtitle">Hệ thống xin phép đi trễ dành cho sinh viên</p>
+
+            <!-- Countdown Timer -->
+            <div class="countdown-box" id="countdownBox" style="display: none;">
+                <span class="countdown-label">⏰ Còn lại để xin đi trễ:</span>
+                <span class="countdown-timer" id="countdownTimer">--:--</span>
+            </div>
         </header>
 
         <main class="main-content">
@@ -33,7 +40,13 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="mssv">Mã số sinh viên</label>
-                            <input type="text" id="mssv" name="mssv" placeholder="VD: PS12345" required>
+                            <div class="input-with-btn">
+                                <input type="text" id="mssv" name="mssv" placeholder="VD: PS12345" required>
+                                <button type="button" id="viewHistoryBtn" class="btn btn-sm btn-secondary"
+                                    title="Xem lịch sử">
+                                    📜
+                                </button>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label for="fullname">Họ và tên</label>
@@ -41,8 +54,15 @@
                         </div>
                     </div>
 
+                    <!-- Số lần xin trong tháng -->
+                    <div class="monthly-count-box" id="monthlyCountBox" style="display: none;">
+                        <span class="monthly-count-icon">📊</span>
+                        <span class="monthly-count-text" id="monthlyCountText">Bạn đã xin 0 lần trong tháng này</span>
+                    </div>
+
                     <div class="form-group">
-                        <label for="class_session">Ca học</label>
+                        <label for="class_session">Ca học <span id="suggestedSessionLabel"
+                                class="suggested-label"></span></label>
                         <select id="class_session" name="class_session" required>
                             <option value="">-- Chọn ca học --</option>
                             <option value="Ca 1 (07:15 - 09:15)">Ca 1 (07:15 - 09:15)</option>
@@ -101,6 +121,10 @@
                             <p id="addressText"></p>
                             <small id="coordsText"></small>
                         </div>
+                        <!-- Mini Map -->
+                        <div class="mini-map-container" id="miniMapContainer" style="display: none;">
+                            <div id="miniMap" class="mini-map"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -118,9 +142,43 @@
         </footer>
     </div>
 
+    <!-- Modal lịch sử sinh viên -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeHistoryModal">&times;</button>
+            <h2 class="modal-title">📜 Lịch sử xin đi trễ của bạn</h2>
+
+            <div class="modal-body">
+                <div class="student-info"
+                    style="margin-bottom: 20px; padding: 16px; background: #f1f5f9; border-radius: 8px;">
+                    <strong id="historyStudentName"></strong>
+                    <span style="color: #64748b;"> - MSSV: <span id="historyMssv"></span></span>
+                    <span style="float: right; color: #6366f1; font-weight: 600;">Tổng: <span id="historyTotal"></span>
+                        lần</span>
+                </div>
+
+                <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Ca học</th>
+                                <th>Thời gian</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast notification -->
     <div id="toast" class="toast"></div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="js/app.js"></script>
 </body>
 

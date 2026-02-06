@@ -244,6 +244,43 @@ app.get('/api/lookup-student/:mssv', async (req, res) => {
 });
 
 // ============================================
+// API: Lịch sử sinh viên theo MSSV (PUBLIC)
+// ============================================
+app.get('/api/student-history/:mssv', async (req, res) => {
+    try {
+        const { mssv } = req.params;
+
+        if (!mssv || mssv.trim().length < 3) {
+            return res.json({ success: false, data: [], total: 0 });
+        }
+
+        const allRequests = await getRequests();
+        const studentRequests = allRequests.filter(r =>
+            r.mssv.toLowerCase() === mssv.toLowerCase().trim()
+        );
+
+        // Thêm deadline status cho mỗi request
+        const dataWithStatus = studentRequests.map(req => {
+            const deadlineStatus = checkDeadlineStatus(req.class_session, req.created_at);
+            return {
+                ...req,
+                is_within_deadline: deadlineStatus.isWithinDeadline,
+                deadline_message: deadlineStatus.message
+            };
+        });
+
+        res.json({
+            success: true,
+            data: dataWithStatus,
+            total: studentRequests.length
+        });
+    } catch (error) {
+        console.error('Lỗi lấy lịch sử sinh viên:', error);
+        res.json({ success: false, data: [], total: 0 });
+    }
+});
+
+// ============================================
 // API: Sinh viên gửi yêu cầu (PUBLIC)
 // ============================================
 app.post('/api/late-requests', upload.single('photo'), async (req, res) => {

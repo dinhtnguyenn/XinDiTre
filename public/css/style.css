@@ -1039,3 +1039,150 @@ tbody tr:last-child td {
     border-radius: 12px;
     font-size: 0.875rem;
 }
+
+/* ============================================
+   Student Page - Countdown Box
+   ============================================ */
+.countdown-box {
+    margin-top: 16px;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    backdrop-filter: blur(10px);
+}
+
+.countdown-label {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.875rem;
+}
+
+.countdown-timer {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    background: rgba(239, 68, 68, 0.9);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-family: monospace;
+}
+
+.countdown-timer.expired {
+    background: rgba(100, 116, 139, 0.9);
+}
+
+.countdown-timer.safe {
+    background: rgba(16, 185, 129, 0.9);
+}
+
+/* ============================================
+   Student Page - Monthly Count Box
+   ============================================ */
+.monthly-count-box {
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: var(--border-radius-sm);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    border: 1px solid #fbbf24;
+}
+
+.monthly-count-icon {
+    font-size: 1.25rem;
+}
+
+.monthly-count-text {
+    font-weight: 600;
+    color: #92400e;
+}
+
+.monthly-count-box.warning {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border-color: #f87171;
+}
+
+.monthly-count-box.warning .monthly-count-text {
+    color: #991b1b;
+}
+
+/* ============================================
+   Student Page - Input with Button
+   ============================================ */
+.input-with-btn {
+    display: flex;
+    gap: 8px;
+}
+
+.input-with-btn input {
+    flex: 1;
+}
+
+.btn-sm {
+    padding: 8px 12px !important;
+    min-width: auto;
+    font-size: 1rem;
+}
+
+/* ============================================
+   Student Page - Suggested Session Label
+   ============================================ */
+.suggested-label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #10b981;
+    background: #d1fae5;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 8px;
+}
+
+/* ============================================
+   Student Page - Mini Map
+   ============================================ */
+.mini-map-container {
+    margin-top: 12px;
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
+    border: 2px solid var(--glass-border);
+}
+
+.mini-map {
+    height: 150px;
+    width: 100%;
+}
+
+/* ============================================
+   Student Page - History Modal Table
+   ============================================ */
+#historyModal .table-container {
+    background: #fff;
+    border-radius: var(--border-radius-sm);
+}
+
+#historyModal table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+#historyModal th,
+#historyModal td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+#historyModal th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+#historyModal td {
+    font-size: 0.875rem;
+}
