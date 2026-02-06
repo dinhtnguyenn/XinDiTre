@@ -162,6 +162,11 @@ function capturePhoto() {
         photoBlob = blob;
         photoPreview.src = URL.createObjectURL(blob);
         photoPreview.style.display = 'block';
+        photoPreview.style.cursor = 'zoom-in'; // Indicate clickable
+        photoPreview.style.zIndex = '50';
+
+        // Local listener removed in favor of global delegation
+
         video.style.display = 'none';
 
         // Stop camera stream
@@ -172,7 +177,7 @@ function capturePhoto() {
         captureBtn.style.display = 'none';
         retakeBtn.style.display = 'inline-flex';
 
-        showToast('Đã chụp ảnh có watermark!', 'success');
+        showToast('Đã chụp ảnh thành công!', 'success');
     }, 'image/jpeg', 0.9);
 }
 
@@ -926,3 +931,39 @@ async function detectFaceAndCapture() {
         btn.disabled = false;
     }
 }
+
+// ============================================
+// Global Event Delegation for Zoom (More Robust)
+// ============================================
+document.addEventListener('click', (e) => {
+    // Open Zoom
+    if (e.target && e.target.id === 'photoPreview') {
+        const modal = document.getElementById('imageZoomModal');
+        const zoomedImg = document.getElementById('zoomedImage');
+
+        if (modal && zoomedImg) {
+            zoomedImg.src = e.target.src;
+            modal.classList.add('show'); // Required for CSS visibility!
+            modal.style.display = 'flex';
+            modal.style.justifyContent = 'center';
+            modal.style.alignItems = 'center';
+            modal.style.background = 'rgba(0,0,0,0.95)';
+            modal.style.zIndex = '100000'; // Maximum z-index
+        }
+    }
+
+    // Close Zoom (X button)
+    if (e.target && e.target.id === 'closeImageZoom') {
+        const modal = document.getElementById('imageZoomModal');
+        if (modal) {
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+        }
+    }
+
+    // Close Zoom (Click outside)
+    if (e.target && e.target.id === 'imageZoomModal') {
+        e.target.classList.remove('show');
+        e.target.style.display = 'none';
+    }
+});

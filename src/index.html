@@ -192,6 +192,34 @@
         </div>
     </div>
 
+    <!-- Modal Xem Ảnh -->
+    <div id="imageZoomModal" class="modal" style="z-index: 2000;">
+        <button id="closeImageZoom" style="
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 100001;
+        " onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='scale(1.1)';"
+            onmouseout="this.style.background='rgba(255,255,255,0.15)'; this.style.transform='scale(1)';">
+            ✕
+        </button>
+        <img class="modal-content" id="zoomedImage"
+            style="width: 90%; max-width: 800px; height: auto; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+    </div>
+
     <!-- Toast notification -->
     <div id="toast" class="toast"></div>
 
