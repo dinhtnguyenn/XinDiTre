@@ -32,6 +32,7 @@ const DEADLINE_SECONDS = 30;
 
 // ============================================
 // Hàm kiểm tra trong hạn/ngoài hạn
+// Trong hạn = trước khi bắt đầu ca HOẶC trong vòng 14p30s sau khi bắt đầu ca
 // ============================================
 function checkDeadlineStatus(classSession, submittedAt) {
     const schedule = CLASS_SCHEDULES[classSession];
@@ -41,25 +42,44 @@ function checkDeadlineStatus(classSession, submittedAt) {
 
     const submitted = new Date(submittedAt);
 
-    // Tạo deadline cho ca học (ngày submit + giờ bắt đầu + 14:30)
-    const deadline = new Date(submitted);
-    deadline.setHours(schedule.hour, schedule.minute + DEADLINE_MINUTES, DEADLINE_SECONDS, 0);
+    // Thời gian bắt đầu ca (cùng ngày với ngày submit)
+    const classStart = new Date(submitted);
+    classStart.setHours(schedule.hour, schedule.minute, 0, 0);
 
+    // Deadline = bắt đầu ca + 14 phút 30 giây
+    const deadline = new Date(classStart);
+    deadline.setMinutes(deadline.getMinutes() + DEADLINE_MINUTES);
+    deadline.setSeconds(deadline.getSeconds() + DEADLINE_SECONDS);
+
+    // Trong hạn nếu gửi trước hoặc đúng deadline
     const isWithinDeadline = submitted <= deadline;
 
-    // Tính khoảng cách thời gian
-    const diffMs = submitted - deadline;
-    const diffMinutes = Math.abs(Math.floor(diffMs / 60000));
-    const diffSeconds = Math.abs(Math.floor((diffMs % 60000) / 1000));
+    // Tính khoảng cách thời gian so với bắt đầu ca
+    const diffFromStart = submitted - classStart;
+    const diffMinutes = Math.floor(Math.abs(diffFromStart) / 60000);
+    const diffSeconds = Math.floor((Math.abs(diffFromStart) % 60000) / 1000);
 
     let message;
-    if (isWithinDeadline) {
-        message = `✅ Trong hạn (trước ${diffMinutes}p${diffSeconds}s)`;
+    if (submitted < classStart) {
+        // Gửi trước khi bắt đầu ca
+        message = `✅ Trong hạn (gửi trước ${diffMinutes}p${diffSeconds}s khi bắt đầu ca)`;
+    } else if (isWithinDeadline) {
+        // Gửi sau khi bắt đầu ca nhưng trong hạn
+        message = `✅ Trong hạn (gửi sau ${diffMinutes}p${diffSeconds}s khi bắt đầu ca)`;
     } else {
-        message = `❌ Ngoài hạn (trễ ${diffMinutes}p${diffSeconds}s)`;
+        // Gửi quá hạn
+        const lateMs = submitted - deadline;
+        const lateMinutes = Math.floor(lateMs / 60000);
+        const lateSeconds = Math.floor((lateMs % 60000) / 1000);
+        message = `❌ Ngoài hạn (trễ ${lateMinutes}p${lateSeconds}s so với hạn 14p30s)`;
     }
 
-    return { isWithinDeadline, message, deadline: deadline.toISOString() };
+    return {
+        isWithinDeadline,
+        message,
+        deadline: deadline.toISOString(),
+        classStart: classStart.toISOString()
+    };
 }
 
 // ============================================
