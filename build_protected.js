@@ -2,12 +2,13 @@ const fs = require('fs');
 const path = require('path');
 
 function processFile(fileName) {
-    const backupName = fileName + '.bak';
-    const sourcePath = path.join(__dirname, 'public', backupName);
+    // Source is now in src/ folder (security best practice)
+    const sourcePath = path.join(__dirname, 'src', fileName);
+    // Destination is public/ folder (obfuscated code)
     const destPath = path.join(__dirname, 'public', fileName);
 
     if (!fs.existsSync(sourcePath)) {
-        console.log(`❌ Source not found: ${backupName}`);
+        console.log(`❌ Source not found: ${sourcePath}`);
         return;
     }
 
@@ -45,18 +46,6 @@ function processFile(fileName) {
         startTag = '<body class="admin-page">'; // For admin.html
         startIndex = html.indexOf(startTag);
     }
-
-    // End Marker: We assume the external libraries (Leaflet, TensorFlow) start the "non-obfuscated" scripts
-    // or just obfuscate until </body> if we are confident the libraries are fine being rewritten (they are).
-    // However, loading external scripts via document.write can be tricky with race conditions.
-    // Ideally we keep external <script src> outside the obfuscated block if possible, OR we include them in the obfuscation string (which renders them via document.write, usually fine for blocking scripts).
-
-    // Let's try to find a safe end marker.
-    // For index.html: <!-- TensorFlow.js
-    // For admin.html: <script src="https://unpkg.com/leaflet...
-
-    // Actually, to be safe and simple: Obfuscate everything!
-    // But <html> and <head> are needed.
 
     if (startIndex !== -1) {
         const bodyContentStart = startIndex + startTag.length;
