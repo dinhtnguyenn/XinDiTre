@@ -15,6 +15,54 @@ const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8500292800:AAFIzax
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '454920130';
 
 // ============================================
+// Cấu hình thời gian các ca học
+// ============================================
+const CLASS_SCHEDULES = {
+    'Ca 1 (07:15 - 09:15)': { hour: 7, minute: 15 },
+    'Ca 2 (09:25 - 11:25)': { hour: 9, minute: 25 },
+    'Ca 3 (12:00 - 14:00)': { hour: 12, minute: 0 },
+    'Ca 4 (14:10 - 16:10)': { hour: 14, minute: 10 },
+    'Ca 5 (16:20 - 18:20)': { hour: 16, minute: 20 },
+    'Ca 6 (18:30 - 20:30)': { hour: 18, minute: 30 }
+};
+
+// Hạn xin đi trễ: 14 phút 30 giây sau khi bắt đầu ca
+const DEADLINE_MINUTES = 14;
+const DEADLINE_SECONDS = 30;
+
+// ============================================
+// Hàm kiểm tra trong hạn/ngoài hạn
+// ============================================
+function checkDeadlineStatus(classSession, submittedAt) {
+    const schedule = CLASS_SCHEDULES[classSession];
+    if (!schedule) {
+        return { isWithinDeadline: null, message: 'Không xác định' };
+    }
+
+    const submitted = new Date(submittedAt);
+
+    // Tạo deadline cho ca học (ngày submit + giờ bắt đầu + 14:30)
+    const deadline = new Date(submitted);
+    deadline.setHours(schedule.hour, schedule.minute + DEADLINE_MINUTES, DEADLINE_SECONDS, 0);
+
+    const isWithinDeadline = submitted <= deadline;
+
+    // Tính khoảng cách thời gian
+    const diffMs = submitted - deadline;
+    const diffMinutes = Math.abs(Math.floor(diffMs / 60000));
+    const diffSeconds = Math.abs(Math.floor((diffMs % 60000) / 1000));
+
+    let message;
+    if (isWithinDeadline) {
+        message = `✅ Trong hạn (trước ${diffMinutes}p${diffSeconds}s)`;
+    } else {
+        message = `❌ Ngoài hạn (trễ ${diffMinutes}p${diffSeconds}s)`;
+    }
+
+    return { isWithinDeadline, message, deadline: deadline.toISOString() };
+}
+
+// ============================================
 // Telegram Notification Function
 // ============================================
 async function sendTelegramNotification(data) {
@@ -22,6 +70,11 @@ async function sendTelegramNotification(data) {
         console.log('⚠️ Telegram chưa được cấu hình');
         return;
     }
+
+    const now = new Date();
+    const deadlineStatus = checkDeadlineStatus(data.class_session, now);
+    const statusIcon = deadlineStatus.isWithinDeadline ? '✅' : '❌';
+    const statusText = deadlineStatus.isWithinDeadline ? 'TRONG HẠN' : 'NGOÀI HẠN';
 
     const message = `
 🔔 *YÊU CẦU XIN ĐI TRỄ MỚI*
@@ -31,7 +84,10 @@ async function sendTelegramNotification(data) {
 📚 *Ca học:* ${data.class_session}
 📝 *Lý do:* ${data.reason}
 📍 *Vị trí:* ${data.address || 'Không xác định'}
-⏰ *Thời gian:* ${new Date().toLocaleString('vi-VN')}
+⏰ *Thời gian:* ${now.toLocaleString('vi-VN')}
+
+${statusIcon} *Trạng thái:* ${statusText}
+${deadlineStatus.message}
     `.trim();
 
     try {
@@ -169,12 +225,22 @@ app.post('/api/late-requests', upload.single('photo'), async (req, res) => {
 });
 
 // ============================================
-// API: Admin lấy danh sách (có filter)
+// API: Admin lấy danh sách (có filter + deadline status)
 // ============================================
 app.get('/api/late-requests', requireAdminAuth, async (req, res) => {
     try {
-        const { filter, search } = req.query;
+        const { filter, search, deadline_filter } = req.query;
         let data = await getRequests();
+
+        // Thêm trạng thái trong hạn/ngoài hạn cho mỗi record
+        data = data.map(req => {
+            const deadlineStatus = checkDeadlineStatus(req.class_session, req.created_at);
+            return {
+                ...req,
+                is_within_deadline: deadlineStatus.isWithinDeadline,
+                deadline_message: deadlineStatus.message
+            };
+        });
 
         // Lọc theo thời gian
         if (filter) {
@@ -196,6 +262,13 @@ app.get('/api/late-requests', requireAdminAuth, async (req, res) => {
             if (startDate) {
                 data = data.filter(req => new Date(req.created_at) >= startDate);
             }
+        }
+
+        // Lọc theo trạng thái deadline
+        if (deadline_filter === 'within') {
+            data = data.filter(req => req.is_within_deadline === true);
+        } else if (deadline_filter === 'outside') {
+            data = data.filter(req => req.is_within_deadline === false);
         }
 
         // Tìm kiếm theo MSSV hoặc tên
@@ -221,7 +294,17 @@ app.get('/api/late-requests/student/:mssv', requireAdminAuth, async (req, res) =
     try {
         const { mssv } = req.params;
         const allData = await getRequests();
-        const studentData = allData.filter(req => req.mssv === mssv);
+        let studentData = allData.filter(req => req.mssv === mssv);
+
+        // Thêm trạng thái deadline
+        studentData = studentData.map(req => {
+            const deadlineStatus = checkDeadlineStatus(req.class_session, req.created_at);
+            return {
+                ...req,
+                is_within_deadline: deadlineStatus.isWithinDeadline,
+                deadline_message: deadlineStatus.message
+            };
+        });
 
         res.json({
             success: true,
@@ -239,7 +322,13 @@ app.get('/api/late-requests/student/:mssv', requireAdminAuth, async (req, res) =
 // ============================================
 app.get('/api/statistics', requireAdminAuth, async (req, res) => {
     try {
-        const data = await getRequests();
+        let data = await getRequests();
+
+        // Thêm trạng thái deadline cho thống kê
+        data = data.map(req => {
+            const deadlineStatus = checkDeadlineStatus(req.class_session, req.created_at);
+            return { ...req, is_within_deadline: deadlineStatus.isWithinDeadline };
+        });
 
         // Thống kê theo ngày (7 ngày gần nhất)
         const dailyStats = {};
@@ -253,16 +342,18 @@ app.get('/api/statistics', requireAdminAuth, async (req, res) => {
         }
 
         data.forEach(req => {
-            // Thống kê theo ngày
             const dateStr = new Date(req.created_at).toISOString().split('T')[0];
             if (dailyStats[dateStr] !== undefined) {
                 dailyStats[dateStr]++;
             }
 
-            // Thống kê theo ca học
             const classSession = req.class_session || 'Không xác định';
             classStats[classSession] = (classStats[classSession] || 0) + 1;
         });
+
+        // Thống kê trong hạn/ngoài hạn
+        const withinDeadline = data.filter(r => r.is_within_deadline === true).length;
+        const outsideDeadline = data.filter(r => r.is_within_deadline === false).length;
 
         res.json({
             success: true,
@@ -276,6 +367,10 @@ app.get('/api/statistics', requireAdminAuth, async (req, res) => {
             byClass: {
                 labels: Object.keys(classStats),
                 values: Object.values(classStats)
+            },
+            byDeadline: {
+                within: withinDeadline,
+                outside: outsideDeadline
             },
             total: data.length,
             thisWeek: data.filter(req => {
@@ -314,6 +409,7 @@ initDatabase().then(() => {
     👨‍🏫 Trang admin: http://localhost:${PORT}/admin.html
     🔐 Mật khẩu admin: ${ADMIN_PASSWORD}
     📲 Telegram: ${TELEGRAM_CHAT_ID ? 'Đã cấu hình' : 'Chưa cấu hình'}
+    ⏱️  Hạn xin đi trễ: ${DEADLINE_MINUTES}p${DEADLINE_SECONDS}s sau khi bắt đầu ca
     ☁️  Database: Supabase Cloud
         `);
     });

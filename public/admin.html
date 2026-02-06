@@ -59,17 +59,24 @@
                     </div>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-icon">📅</span>
+                    <span class="stat-icon">✅</span>
                     <div class="stat-info">
-                        <span class="stat-number" id="todayRequests">0</span>
-                        <span class="stat-label">Hôm nay</span>
+                        <span class="stat-number" id="withinDeadline" style="color: #10b981;">0</span>
+                        <span class="stat-label">Trong hạn</span>
                     </div>
                 </div>
                 <div class="stat-card">
-                    <span class="stat-icon">📊</span>
+                    <span class="stat-icon">❌</span>
                     <div class="stat-info">
-                        <span class="stat-number" id="weekRequests">0</span>
-                        <span class="stat-label">Tuần này</span>
+                        <span class="stat-number" id="outsideDeadline" style="color: #ef4444;">0</span>
+                        <span class="stat-label">Ngoài hạn</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">�</span>
+                    <div class="stat-info">
+                        <span class="stat-number" id="todayRequests">0</span>
+                        <span class="stat-label">Hôm nay</span>
                     </div>
                 </div>
             </div>
@@ -93,10 +100,17 @@
                 </div>
                 <div class="filter-box">
                     <select id="filterSelect">
-                        <option value="">Tất cả</option>
+                        <option value="">📅 Tất cả thời gian</option>
                         <option value="today">Hôm nay</option>
                         <option value="week">7 ngày qua</option>
                         <option value="month">Tháng này</option>
+                    </select>
+                </div>
+                <div class="filter-box">
+                    <select id="deadlineFilter">
+                        <option value="">⏰ Tất cả trạng thái</option>
+                        <option value="within">✅ Trong hạn</option>
+                        <option value="outside">❌ Ngoài hạn</option>
                     </select>
                 </div>
                 <button id="refreshBtn" class="btn btn-secondary btn-sm">
@@ -120,12 +134,13 @@
                                 <th>Họ tên</th>
                                 <th>Ca học</th>
                                 <th>Thời gian</th>
+                                <th>Trạng thái</th>
                                 <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="requestsBody">
                             <tr>
-                                <td colspan="6" class="loading-row">
+                                <td colspan="7" class="loading-row">
                                     <span class="loader"></span>
                                     Đang tải dữ liệu...
                                 </td>
@@ -137,7 +152,7 @@
         </main>
 
         <footer class="footer">
-            <p>© 2026 - Hệ thống Xin Đi Trễ | 📲 Thông báo qua Telegram</p>
+            <p>© 2026 - Hệ thống Xin Đi Trễ | ⏱️ Hạn xin: 14p30s sau khi bắt đầu ca</p>
         </footer>
     </div>
 
@@ -148,6 +163,8 @@
             <h2 class="modal-title">Chi tiết yêu cầu</h2>
 
             <div class="modal-body">
+                <div class="deadline-badge" id="deadlineBadge"></div>
+
                 <div class="detail-grid">
                     <div class="detail-item">
                         <label>MSSV:</label>
@@ -218,8 +235,8 @@
                             <tr>
                                 <th>STT</th>
                                 <th>Ca học</th>
-                                <th>Lý do</th>
                                 <th>Thời gian</th>
+                                <th>Trạng thái</th>
                             </tr>
                         </thead>
                         <tbody id="historyBody">

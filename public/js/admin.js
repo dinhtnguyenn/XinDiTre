@@ -74,10 +74,12 @@ let classChart = null;
 const requestsBody = document.getElementById('requestsBody');
 const totalRequests = document.getElementById('totalRequests');
 const todayRequests = document.getElementById('todayRequests');
-const weekRequests = document.getElementById('weekRequests');
+const withinDeadline = document.getElementById('withinDeadline');
+const outsideDeadline = document.getElementById('outsideDeadline');
 const refreshBtn = document.getElementById('refreshBtn');
 const searchInput = document.getElementById('searchInput');
 const filterSelect = document.getElementById('filterSelect');
+const deadlineFilter = document.getElementById('deadlineFilter');
 const resultCount = document.getElementById('resultCount');
 
 const modal = document.getElementById('detailModal');
@@ -104,14 +106,11 @@ async function fetchStatistics() {
         const result = await response.json();
 
         if (result.success) {
-            // Update stats
             totalRequests.textContent = result.total;
-            weekRequests.textContent = result.thisWeek;
+            withinDeadline.textContent = result.byDeadline?.within || 0;
+            outsideDeadline.textContent = result.byDeadline?.outside || 0;
 
-            // Daily chart
             renderDailyChart(result.daily);
-
-            // Class chart
             renderClassChart(result.byClass);
         }
     } catch (error) {
@@ -140,15 +139,8 @@ function renderDailyChart(data) {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: { stepSize: 1 }
-                }
-            }
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
         }
     });
 }
@@ -158,29 +150,18 @@ function renderClassChart(data) {
 
     if (classChart) classChart.destroy();
 
-    const colors = [
-        '#6366f1', '#8b5cf6', '#a855f7',
-        '#d946ef', '#ec4899', '#f43f5e'
-    ];
+    const colors = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e'];
 
     classChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: data.labels,
-            datasets: [{
-                data: data.values,
-                backgroundColor: colors.slice(0, data.labels.length)
-            }]
+            datasets: [{ data: data.values, backgroundColor: colors.slice(0, data.labels.length) }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: { boxWidth: 12 }
-                }
-            }
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
         }
     });
 }
@@ -191,7 +172,7 @@ function renderClassChart(data) {
 async function fetchRequests() {
     requestsBody.innerHTML = `
         <tr>
-            <td colspan="6" class="loading-row">
+            <td colspan="7" class="loading-row">
                 <span class="loader"></span>
                 Đang tải dữ liệu...
             </td>
@@ -201,16 +182,16 @@ async function fetchRequests() {
     try {
         const filter = filterSelect.value;
         const search = searchInput.value.trim();
+        const deadline = deadlineFilter.value;
 
         let url = '/api/late-requests';
         const params = new URLSearchParams();
         if (filter) params.append('filter', filter);
         if (search) params.append('search', search);
+        if (deadline) params.append('deadline_filter', deadline);
         if (params.toString()) url += '?' + params.toString();
 
-        const response = await fetch(url, {
-            headers: getAuthHeaders()
-        });
+        const response = await fetch(url, { headers: getAuthHeaders() });
 
         if (response.status === 401) {
             logout();
@@ -231,7 +212,7 @@ async function fetchRequests() {
         console.error('Lỗi khi tải dữ liệu:', error);
         requestsBody.innerHTML = `
             <tr>
-                <td colspan="6" class="empty-row">
+                <td colspan="7" class="empty-row">
                     ❌ Không thể kết nối đến server
                 </td>
             </tr>
@@ -248,7 +229,7 @@ function renderTable() {
     if (requests.length === 0) {
         requestsBody.innerHTML = `
             <tr>
-                <td colspan="6" class="empty-row">
+                <td colspan="7" class="empty-row">
                     📭 Không tìm thấy yêu cầu nào
                 </td>
             </tr>
@@ -256,20 +237,34 @@ function renderTable() {
         return;
     }
 
-    requestsBody.innerHTML = requests.map((req, index) => `
-        <tr>
-            <td>${index + 1}</td>
-            <td><strong>${escapeHtml(req.mssv)}</strong></td>
-            <td>${escapeHtml(req.fullname)}</td>
-            <td>${escapeHtml(req.class_session)}</td>
-            <td>${formatDate(req.created_at)}</td>
-            <td>
-                <button class="action-btn" onclick="viewDetail(${req.id})">
-                    Xem chi tiết
-                </button>
-            </td>
-        </tr>
-    `).join('');
+    requestsBody.innerHTML = requests.map((req, index) => {
+        const statusHtml = getDeadlineStatusHtml(req.is_within_deadline, req.deadline_message);
+        return `
+            <tr>
+                <td>${index + 1}</td>
+                <td><strong>${escapeHtml(req.mssv)}</strong></td>
+                <td>${escapeHtml(req.fullname)}</td>
+                <td>${escapeHtml(req.class_session)}</td>
+                <td>${formatDateTime(req.created_at)}</td>
+                <td>${statusHtml}</td>
+                <td>
+                    <button class="action-btn" onclick="viewDetail(${req.id})">
+                        Xem
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function getDeadlineStatusHtml(isWithin, message) {
+    if (isWithin === null) {
+        return '<span class="status-badge status-unknown">❓ Không xác định</span>';
+    }
+    if (isWithin) {
+        return `<span class="status-badge status-within" title="${message}">✅ Trong hạn</span>`;
+    }
+    return `<span class="status-badge status-outside" title="${message}">❌ Ngoài hạn</span>`;
 }
 
 // ============================================
@@ -292,10 +287,23 @@ function viewDetail(id) {
     currentRequest = requests.find(req => req.id === id);
     if (!currentRequest) return;
 
+    // Deadline badge
+    const badgeEl = document.getElementById('deadlineBadge');
+    if (currentRequest.is_within_deadline === true) {
+        badgeEl.className = 'deadline-badge within';
+        badgeEl.innerHTML = `✅ TRONG HẠN<br><small>${currentRequest.deadline_message}</small>`;
+    } else if (currentRequest.is_within_deadline === false) {
+        badgeEl.className = 'deadline-badge outside';
+        badgeEl.innerHTML = `❌ NGOÀI HẠN<br><small>${currentRequest.deadline_message}</small>`;
+    } else {
+        badgeEl.className = 'deadline-badge unknown';
+        badgeEl.innerHTML = '❓ Không xác định';
+    }
+
     document.getElementById('detailMssv').textContent = currentRequest.mssv;
     document.getElementById('detailFullname').textContent = currentRequest.fullname;
     document.getElementById('detailClassSession').textContent = currentRequest.class_session;
-    document.getElementById('detailTime').textContent = formatDate(currentRequest.created_at);
+    document.getElementById('detailTime').textContent = formatDateTime(currentRequest.created_at);
     document.getElementById('detailReason').textContent = currentRequest.reason;
 
     const photoEl = document.getElementById('detailPhoto');
@@ -314,7 +322,6 @@ function viewDetail(id) {
         currentRequest.address || 'Không có thông tin vị trí';
 
     modal.classList.add('show');
-
     setTimeout(() => initMap(), 100);
 }
 
@@ -339,14 +346,17 @@ async function viewStudentHistory() {
             document.getElementById('historyTotal').textContent = result.total;
 
             const historyBody = document.getElementById('historyBody');
-            historyBody.innerHTML = result.data.map((req, index) => `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${escapeHtml(req.class_session)}</td>
-                    <td>${escapeHtml(req.reason)}</td>
-                    <td>${formatDate(req.created_at)}</td>
-                </tr>
-            `).join('');
+            historyBody.innerHTML = result.data.map((req, index) => {
+                const statusHtml = getDeadlineStatusHtml(req.is_within_deadline, req.deadline_message);
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${escapeHtml(req.class_session)}</td>
+                        <td>${formatDateTime(req.created_at)}</td>
+                        <td>${statusHtml}</td>
+                    </tr>
+                `;
+            }).join('');
 
             closeModalFn();
             historyModal.classList.add('show');
@@ -432,14 +442,15 @@ function closeHistoryModalFn() {
 // ============================================
 // Utility Functions
 // ============================================
-function formatDate(dateStr) {
+function formatDateTime(dateStr) {
     const date = new Date(dateStr);
     return date.toLocaleString('vi-VN', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
+        second: '2-digit'
     });
 }
 
@@ -455,7 +466,6 @@ function showToast(message, type = 'info') {
     setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-// Debounce search
 let searchTimeout;
 function handleSearch() {
     clearTimeout(searchTimeout);
@@ -477,6 +487,7 @@ refreshBtn.addEventListener('click', () => {
 });
 searchInput.addEventListener('input', handleSearch);
 filterSelect.addEventListener('change', fetchRequests);
+deadlineFilter.addEventListener('change', fetchRequests);
 
 closeModal.addEventListener('click', closeModalFn);
 deleteBtn.addEventListener('click', deleteRequest);

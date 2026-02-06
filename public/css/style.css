@@ -908,3 +908,68 @@ tbody tr:last-child td {
         width: 100%;
     }
 }
+
+/* ============================================
+   Status Badges
+   ============================================ */
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-within {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-outside {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.status-unknown {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+/* ============================================
+   Deadline Badge in Modal
+   ============================================ */
+.deadline-badge {
+    text-align: center;
+    padding: 16px;
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 20px;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.deadline-badge.within {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+    border: 2px solid #10b981;
+}
+
+.deadline-badge.outside {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+    border: 2px solid #ef4444;
+}
+
+.deadline-badge.unknown {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 2px solid #cbd5e1;
+}
+
+.deadline-badge small {
+    display: block;
+    font-weight: 500;
+    font-size: 0.875rem;
+    margin-top: 4px;
+    opacity: 0.8;
+}
