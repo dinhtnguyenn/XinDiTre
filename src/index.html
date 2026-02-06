@@ -123,6 +123,43 @@
                                 <span>🔄</span> Chụp lại
                             </button>
                         </div>
+
+                        <!-- Evidence Cam Section -->
+                        <div id="evidenceSection"
+                            style="display: none; margin-top: 16px; padding: 16px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; border: 1px solid #f59e0b;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                                <span style="font-size: 24px;">📎</span>
+                                <div>
+                                    <strong style="color: #92400e;">Thêm minh chứng (Tùy chọn)</strong>
+                                    <p style="font-size: 12px; color: #a16207; margin: 0;">Chụp ảnh kẹt xe, xe hỏng...
+                                        bằng camera sau</p>
+                                </div>
+                            </div>
+
+                            <div id="evidenceCameraContainer" class="camera-container" style="display: none;">
+                                <video id="evidenceVideo" autoplay playsinline></video>
+                                <img id="evidencePreview" class="photo-preview" style="display: none; cursor: zoom-in;">
+                            </div>
+
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+                                <button type="button" id="startEvidenceCamBtn" class="btn btn-secondary"
+                                    style="font-size: 14px; padding: 8px 16px;">
+                                    📷 Bật Camera Sau
+                                </button>
+                                <button type="button" id="captureEvidenceBtn" class="btn btn-primary"
+                                    style="display: none; font-size: 14px; padding: 8px 16px;">
+                                    📸 Chụp minh chứng
+                                </button>
+                                <button type="button" id="retakeEvidenceBtn" class="btn btn-secondary"
+                                    style="display: none; font-size: 14px; padding: 8px 16px;">
+                                    🔄 Chụp lại
+                                </button>
+                                <button type="button" id="removeEvidenceBtn" class="btn"
+                                    style="display: none; font-size: 14px; padding: 8px 16px; background: #ef4444; color: white;">
+                                    ❌ Bỏ ảnh
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="location-section">

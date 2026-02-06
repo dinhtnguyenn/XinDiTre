@@ -14,20 +14,28 @@ async function initDatabase() {
 
 // Create a new late request
 async function createRequest(data) {
-    const { mssv, fullname, class_session, reason, photo_url, latitude, longitude, address } = data;
+    const { mssv, fullname, class_session, reason, photo_url, evidence_url, latitude, longitude, address } = data;
+
+    // Build insert object dynamically (evidence_url may not exist in DB)
+    const insertData = {
+        mssv,
+        fullname,
+        class_session,
+        reason,
+        photo_url,
+        latitude,
+        longitude,
+        address
+    };
+
+    // Only add evidence_url if it has a value (column may not exist in older DBs)
+    if (evidence_url) {
+        insertData.evidence_url = evidence_url;
+    }
 
     const { data: result, error } = await supabase
         .from('late_requests')
-        .insert([{
-            mssv,
-            fullname,
-            class_session,
-            reason,
-            photo_url,
-            latitude,
-            longitude,
-            address
-        }])
+        .insert([insertData])
         .select();
 
     if (error) {

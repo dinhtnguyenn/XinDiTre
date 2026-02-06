@@ -12,6 +12,11 @@ let countdownInterval = null;
 let monthlyCount = 0;
 let faceModel = null; // AI Face Model
 
+// Evidence Cam Variables
+let evidenceStream = null;
+let evidenceBlob = null;
+let evidenceUsingFrontCamera = false; // Track if using front camera
+
 // Class schedules (phải khớp với server)
 const CLASS_SCHEDULES = {
     'Ca 1 (07:15 - 09:15)': { hour: 7, minute: 15 },
@@ -177,7 +182,13 @@ function capturePhoto() {
         captureBtn.style.display = 'none';
         retakeBtn.style.display = 'inline-flex';
 
-        showToast('Đã chụp ảnh thành công!', 'success');
+        // Show evidence section after selfie capture
+        const evidenceSection = document.getElementById('evidenceSection');
+        if (evidenceSection) {
+            evidenceSection.style.display = 'block';
+        }
+
+        showToast('Đã chụp ảnh thành công! Bạn có thể thêm ảnh minh chứng (tùy chọn).', 'success');
     }, 'image/jpeg', 0.9);
 }
 
@@ -429,6 +440,11 @@ async function handleSubmit(e) {
     formData.append('longitude', longitude);
     formData.append('address', address);
 
+    // Append evidence photo if exists
+    if (evidenceBlob) {
+        formData.append('evidence', evidenceBlob, 'evidence.jpg');
+    }
+
     // Disable button
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<span class="loader"></span> Đang gửi...';
@@ -451,6 +467,9 @@ async function handleSubmit(e) {
             // Reset form
             form.reset();
             retakePhoto();
+
+            // Clear evidence photo if exists
+            clearEvidence();
 
             // Reset location
             latitude = null;
@@ -966,4 +985,193 @@ document.addEventListener('click', (e) => {
         e.target.classList.remove('show');
         e.target.style.display = 'none';
     }
+
+    // Open Evidence Zoom
+    if (e.target && e.target.id === 'evidencePreview') {
+        const modal = document.getElementById('imageZoomModal');
+        const zoomedImg = document.getElementById('zoomedImage');
+
+        if (modal && zoomedImg) {
+            zoomedImg.src = e.target.src;
+            modal.classList.add('show');
+            modal.style.display = 'flex';
+            modal.style.justifyContent = 'center';
+            modal.style.alignItems = 'center';
+            modal.style.background = 'rgba(0,0,0,0.95)';
+            modal.style.zIndex = '100000';
+        }
+    }
 });
+
+// ============================================
+// Evidence Cam Functions
+// ============================================
+
+async function startEvidenceCamera() {
+    const evidenceVideo = document.getElementById('evidenceVideo');
+    const evidenceCameraContainer = document.getElementById('evidenceCameraContainer');
+    const startEvidenceCamBtn = document.getElementById('startEvidenceCamBtn');
+    const captureEvidenceBtn = document.getElementById('captureEvidenceBtn');
+
+    try {
+        // Request rear camera (environment)
+        evidenceStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' } },
+            audio: false
+        });
+
+        evidenceVideo.srcObject = evidenceStream;
+        evidenceCameraContainer.style.display = 'block';
+        startEvidenceCamBtn.style.display = 'none';
+        captureEvidenceBtn.style.display = 'inline-flex';
+        evidenceUsingFrontCamera = false; // Using rear camera
+
+        showToast('📷 Camera sau đã bật!', 'success');
+    } catch (err) {
+        console.error('Evidence camera error:', err);
+        showToast('⚠️ Không thể bật camera sau. Thử dùng camera trước.', 'error');
+
+        // Fallback to front camera
+        try {
+            evidenceStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user' },
+                audio: false
+            });
+            evidenceVideo.srcObject = evidenceStream;
+            evidenceCameraContainer.style.display = 'block';
+            startEvidenceCamBtn.style.display = 'none';
+            captureEvidenceBtn.style.display = 'inline-flex';
+            evidenceUsingFrontCamera = true; // Using front camera - need to mirror
+            evidenceVideo.style.transform = 'scaleX(-1)'; // Mirror preview for front camera
+        } catch (e) {
+            showToast('❌ Không thể truy cập camera.', 'error');
+        }
+    }
+}
+
+function captureEvidence() {
+    const evidenceVideo = document.getElementById('evidenceVideo');
+    const evidencePreview = document.getElementById('evidencePreview');
+    const captureEvidenceBtn = document.getElementById('captureEvidenceBtn');
+    const retakeEvidenceBtn = document.getElementById('retakeEvidenceBtn');
+    const removeEvidenceBtn = document.getElementById('removeEvidenceBtn');
+
+    // Create canvas and capture
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = evidenceVideo.videoWidth;
+    tempCanvas.height = evidenceVideo.videoHeight;
+    const ctx = tempCanvas.getContext('2d');
+
+    // Mirror if using front camera
+    if (evidenceUsingFrontCamera) {
+        ctx.translate(tempCanvas.width, 0);
+        ctx.scale(-1, 1);
+    }
+    ctx.drawImage(evidenceVideo, 0, 0);
+
+    // Add timestamp watermark
+    const now = new Date();
+    const timestamp = now.toLocaleString('vi-VN');
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(0, tempCanvas.height - 30, tempCanvas.width, 30);
+    ctx.fillStyle = 'white';
+    ctx.font = '14px Arial';
+    ctx.fillText(`📍 Minh chứng - ${timestamp}`, 10, tempCanvas.height - 10);
+
+    // Convert to blob
+    tempCanvas.toBlob((blob) => {
+        evidenceBlob = blob;
+        evidencePreview.src = URL.createObjectURL(blob);
+        evidencePreview.style.display = 'block';
+        evidenceVideo.style.display = 'none';
+
+        // Stop stream
+        if (evidenceStream) {
+            evidenceStream.getTracks().forEach(track => track.stop());
+            evidenceStream = null;
+        }
+
+        // Toggle buttons
+        captureEvidenceBtn.style.display = 'none';
+        retakeEvidenceBtn.style.display = 'inline-flex';
+        removeEvidenceBtn.style.display = 'inline-flex';
+
+        showToast('📸 Đã chụp minh chứng!', 'success');
+    }, 'image/jpeg', 0.8);
+}
+
+function retakeEvidence() {
+    const evidencePreview = document.getElementById('evidencePreview');
+    const evidenceVideo = document.getElementById('evidenceVideo');
+    const retakeEvidenceBtn = document.getElementById('retakeEvidenceBtn');
+    const removeEvidenceBtn = document.getElementById('removeEvidenceBtn');
+
+    evidenceBlob = null;
+    evidencePreview.style.display = 'none';
+    evidenceVideo.style.display = 'block';
+    retakeEvidenceBtn.style.display = 'none';
+    removeEvidenceBtn.style.display = 'none';
+
+    startEvidenceCamera();
+}
+
+function removeEvidence() {
+    const evidenceSection = document.getElementById('evidenceSection');
+    const evidenceCameraContainer = document.getElementById('evidenceCameraContainer');
+    const evidencePreview = document.getElementById('evidencePreview');
+    const startEvidenceCamBtn = document.getElementById('startEvidenceCamBtn');
+    const captureEvidenceBtn = document.getElementById('captureEvidenceBtn');
+    const retakeEvidenceBtn = document.getElementById('retakeEvidenceBtn');
+    const removeEvidenceBtn = document.getElementById('removeEvidenceBtn');
+
+    // Stop stream if running
+    if (evidenceStream) {
+        evidenceStream.getTracks().forEach(track => track.stop());
+        evidenceStream = null;
+    }
+
+    evidenceBlob = null;
+    evidencePreview.style.display = 'none';
+    evidenceCameraContainer.style.display = 'none';
+    startEvidenceCamBtn.style.display = 'inline-flex';
+    captureEvidenceBtn.style.display = 'none';
+    retakeEvidenceBtn.style.display = 'none';
+    removeEvidenceBtn.style.display = 'none';
+
+    showToast('🗑️ Đã bỏ ảnh minh chứng', 'info');
+}
+
+// Clear evidence completely (used after successful submit)
+function clearEvidence() {
+    const evidenceSection = document.getElementById('evidenceSection');
+    const evidenceCameraContainer = document.getElementById('evidenceCameraContainer');
+    const evidencePreview = document.getElementById('evidencePreview');
+    const evidenceVideo = document.getElementById('evidenceVideo');
+    const startEvidenceCamBtn = document.getElementById('startEvidenceCamBtn');
+    const captureEvidenceBtn = document.getElementById('captureEvidenceBtn');
+    const retakeEvidenceBtn = document.getElementById('retakeEvidenceBtn');
+    const removeEvidenceBtn = document.getElementById('removeEvidenceBtn');
+
+    // Stop stream if running
+    if (evidenceStream) {
+        evidenceStream.getTracks().forEach(track => track.stop());
+        evidenceStream = null;
+    }
+
+    evidenceBlob = null;
+
+    if (evidencePreview) evidencePreview.style.display = 'none';
+    if (evidenceVideo) evidenceVideo.style.display = 'block';
+    if (evidenceCameraContainer) evidenceCameraContainer.style.display = 'none';
+    if (startEvidenceCamBtn) startEvidenceCamBtn.style.display = 'inline-flex';
+    if (captureEvidenceBtn) captureEvidenceBtn.style.display = 'none';
+    if (retakeEvidenceBtn) retakeEvidenceBtn.style.display = 'none';
+    if (removeEvidenceBtn) removeEvidenceBtn.style.display = 'none';
+    if (evidenceSection) evidenceSection.style.display = 'none'; // Hide the whole section
+}
+
+// Evidence Cam Event Listeners
+document.getElementById('startEvidenceCamBtn')?.addEventListener('click', startEvidenceCamera);
+document.getElementById('captureEvidenceBtn')?.addEventListener('click', captureEvidence);
+document.getElementById('retakeEvidenceBtn')?.addEventListener('click', retakeEvidence);
+document.getElementById('removeEvidenceBtn')?.addEventListener('click', removeEvidence);

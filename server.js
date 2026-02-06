@@ -298,7 +298,7 @@ app.get('/api/student-history/:mssv', async (req, res) => {
 // ============================================
 // API: Sinh viên gửi yêu cầu (PUBLIC)
 // ============================================
-app.post('/api/late-requests', upload.single('photo'), async (req, res) => {
+app.post('/api/late-requests', upload.fields([{ name: 'photo', maxCount: 1 }, { name: 'evidence', maxCount: 1 }]), async (req, res) => {
     try {
         let { mssv, fullname, class_session, reason, latitude, longitude, address } = req.body;
 
@@ -348,7 +348,7 @@ app.post('/api/late-requests', upload.single('photo'), async (req, res) => {
         }
 
         // Validate ảnh
-        if (!req.file) {
+        if (!req.files || !req.files.photo || req.files.photo.length === 0) {
             return res.status(400).json({
                 success: false,
                 message: 'Vui lòng chụp ảnh selfie!'
@@ -356,9 +356,18 @@ app.post('/api/late-requests', upload.single('photo'), async (req, res) => {
         }
 
         let photo_url = null;
+        let evidence_url = null;
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+
+        // Upload selfie
         const fileName = `selfie-${uniqueSuffix}.jpg`;
-        photo_url = await uploadPhoto(req.file.buffer, fileName);
+        photo_url = await uploadPhoto(req.files.photo[0].buffer, fileName);
+
+        // Upload evidence if exists
+        if (req.files.evidence && req.files.evidence.length > 0) {
+            const evidenceFileName = `evidence-${uniqueSuffix}.jpg`;
+            evidence_url = await uploadPhoto(req.files.evidence[0].buffer, evidenceFileName);
+        }
 
         const result = await createRequest({
             mssv,
@@ -366,6 +375,7 @@ app.post('/api/late-requests', upload.single('photo'), async (req, res) => {
             class_session,
             reason,
             photo_url,
+            evidence_url,
             latitude: parseFloat(latitude) || null,
             longitude: parseFloat(longitude) || null,
             address

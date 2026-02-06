@@ -1536,11 +1536,20 @@ tbody tr:last-child td {
     background: transparent;
 }
 
-/* Force Mirror Vide */
+/* Force Mirror Video (selfie camera) */
 #video {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transform: scaleX(-1);
     /* Mirror effect */
+}
+
+/* Evidence Video (rear camera - no mirror) */
+#evidenceVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: none;
+    /* No mirror for rear camera */
 }

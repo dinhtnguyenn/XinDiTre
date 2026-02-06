@@ -469,6 +469,35 @@ function viewDetail(id) {
         noPhotoText.style.display = 'block';
     }
 
+    // Display evidence photo if exists
+    let evidenceContainer = document.getElementById('evidencePhotoContainer');
+    if (!evidenceContainer) {
+        // Create evidence container dynamically if not exists
+        evidenceContainer = document.createElement('div');
+        evidenceContainer.id = 'evidencePhotoContainer';
+        evidenceContainer.style.marginTop = '16px';
+        evidenceContainer.style.padding = '12px';
+        evidenceContainer.style.background = 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)';
+        evidenceContainer.style.borderRadius = '8px';
+        evidenceContainer.style.border = '1px solid #f59e0b';
+        photoEl.parentElement.appendChild(evidenceContainer);
+    }
+
+    if (currentRequest.evidence_url) {
+        evidenceContainer.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span style="font-size: 20px;">📎</span>
+                <strong style="color: #92400e;">Ảnh bằng chứng</strong>
+            </div>
+            <img src="${currentRequest.evidence_url}" alt="Bằng chứng" 
+                style="width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px; cursor: pointer;"
+                onclick="window.open('${currentRequest.evidence_url}', '_blank')">
+        `;
+        evidenceContainer.style.display = 'block';
+    } else {
+        evidenceContainer.style.display = 'none';
+    }
+
     document.getElementById('detailAddress').innerHTML =
         (currentRequest.address || 'Không có thông tin vị trí');
 
