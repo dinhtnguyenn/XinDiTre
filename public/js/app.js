@@ -63,6 +63,9 @@ async function lookupStudent(mssv) {
             fullnameInput.style.backgroundColor = '#f0fdf4';
             isAutoFilled = true;
             showToast(`Đã tìm thấy: ${result.fullname}`, 'success');
+
+            // Lưu MSSV vào localStorage
+            localStorage.setItem('saved_mssv', mssv);
         } else {
             if (isAutoFilled) {
                 fullnameInput.value = '';
@@ -134,6 +137,12 @@ function capturePhoto() {
     context.scale(-1, 1);
     context.drawImage(video, 0, 0);
 
+    // Reset transform for watermark
+    context.setTransform(1, 0, 0, 1, 0, 0);
+
+    // Add watermark with timestamp and GPS
+    addWatermark(context, canvas.width, canvas.height);
+
     // Convert to blob
     canvas.toBlob((blob) => {
         photoBlob = blob;
@@ -149,8 +158,63 @@ function capturePhoto() {
         captureBtn.style.display = 'none';
         retakeBtn.style.display = 'inline-flex';
 
-        showToast('Đã chụp ảnh thành công!', 'success');
-    }, 'image/jpeg', 0.8);
+        showToast('Đã chụp ảnh có watermark!', 'success');
+    }, 'image/jpeg', 0.9);
+}
+
+// ============================================
+// Watermark Function
+// ============================================
+function addWatermark(ctx, width, height) {
+    const now = new Date();
+    const timestamp = now.toLocaleString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+
+    const gpsText = latitude && longitude
+        ? `📍 ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+        : '📍 Không có GPS';
+
+    const addressShort = address
+        ? (address.length > 50 ? address.substring(0, 50) + '...' : address)
+        : '';
+
+    // Background for watermark
+    const padding = 10;
+    const lineHeight = 20;
+    const boxHeight = addressShort ? 75 : 55;
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    ctx.fillRect(0, height - boxHeight, width, boxHeight);
+
+    // Text style
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 14px Inter, Arial, sans-serif';
+    ctx.textBaseline = 'top';
+
+    // Draw timestamp
+    ctx.fillText(`🕐 ${timestamp}`, padding, height - boxHeight + padding);
+
+    // Draw GPS
+    ctx.fillText(gpsText, padding, height - boxHeight + padding + lineHeight);
+
+    // Draw address (if available)
+    if (addressShort) {
+        ctx.font = '12px Inter, Arial, sans-serif';
+        ctx.fillText(`📫 ${addressShort}`, padding, height - boxHeight + padding + lineHeight * 2);
+    }
+
+    // Add verification badge
+    ctx.fillStyle = 'rgba(16, 185, 129, 0.9)';
+    ctx.fillRect(width - 120, height - boxHeight, 120, 25);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px Inter, Arial, sans-serif';
+    ctx.fillText('✓ XÁC THỰC', width - 110, height - boxHeight + 7);
 }
 
 function retakePhoto() {
@@ -609,4 +673,16 @@ function suggestClassSession() {
 document.addEventListener('DOMContentLoaded', () => {
     getLocation();
     suggestClassSession();
+
+    // Load saved MSSV from localStorage
+    const savedMssv = localStorage.getItem('saved_mssv');
+    if (savedMssv) {
+        mssvInput.value = savedMssv;
+        showToast(`Đã tải MSSV: ${savedMssv}`, 'info');
+
+        // Trigger lookup after a short delay
+        setTimeout(() => {
+            lookupStudent(savedMssv);
+        }, 500);
+    }
 });
