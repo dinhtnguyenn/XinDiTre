@@ -1069,16 +1069,13 @@ function captureEvidence() {
     }
     ctx.drawImage(evidenceVideo, 0, 0);
 
-    // Add timestamp watermark
-    const now = new Date();
-    const timestamp = now.toLocaleString('vi-VN');
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(0, tempCanvas.height - 30, tempCanvas.width, 30);
-    ctx.fillStyle = 'white';
-    ctx.font = '14px Arial';
-    ctx.fillText(`📍 Minh chứng - ${timestamp}`, 10, tempCanvas.height - 10);
+    // Reset transform before adding watermark
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
 
-    // Convert to blob
+    // Add same watermark as selfie (with GPS, timestamp, address)
+    addWatermark(ctx, tempCanvas.width, tempCanvas.height);
+
+    // Convert to blob with higher quality
     tempCanvas.toBlob((blob) => {
         evidenceBlob = blob;
         evidencePreview.src = URL.createObjectURL(blob);
@@ -1097,7 +1094,7 @@ function captureEvidence() {
         removeEvidenceBtn.style.display = 'inline-flex';
 
         showToast('📸 Đã chụp minh chứng!', 'success');
-    }, 'image/jpeg', 0.8);
+    }, 'image/jpeg', 0.95); // Higher quality
 }
 
 function retakeEvidence() {
