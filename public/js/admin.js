@@ -928,64 +928,6 @@ function exportToExcel() {
     }
 }
 
-// ============================================
-// Map Lightbox Functions
-// ============================================
-function openMapLightbox() {
-    if (!currentRequest || !currentRequest.latitude || !currentRequest.longitude) {
-        showToast('Không có dữ liệu vị trí để phóng to!', 'error');
-        return;
-    }
-
-    const lightbox = document.getElementById('mapLightbox');
-    lightbox.classList.add('show');
-    console.log('Opening Map Lightbox...'); // Debug
-
-    // Initialize or Update Map
-    // Wait for lightbox to be visible for correct sizing
-    setTimeout(() => {
-        if (!largeMapInstance) {
-            console.log('Initializing new large map instance');
-            largeMapInstance = L.map('largeMap').setView([currentRequest.latitude, currentRequest.longitude], 16);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap'
-            }).addTo(largeMapInstance);
-        } else {
-            console.log('Updating existing large map instance');
-            largeMapInstance.setView([currentRequest.latitude, currentRequest.longitude], 16);
-        }
-
-        // Always force resize calculation after visibility change
-        largeMapInstance.invalidateSize();
-
-        // Clear existing layers (except tile layer) to remove old markers
-        largeMapInstance.eachLayer((layer) => {
-            if (layer instanceof L.Marker) {
-                largeMapInstance.removeLayer(layer);
-            }
-        });
-
-        // Add User Marker
-        L.marker([currentRequest.latitude, currentRequest.longitude])
-            .addTo(largeMapInstance)
-            .bindPopup(`<b>${currentRequest.fullname}</b><br>${currentRequest.address || 'Vị trí sinh viên'}`)
-            .openPopup();
-
-        // Add School Marker
-        if (typeof SCHOOL_COORDS !== 'undefined') {
-            L.marker([SCHOOL_COORDS.latitude, SCHOOL_COORDS.longitude])
-                .addTo(largeMapInstance)
-                .bindPopup('<b>FPT Polytechnic CS3</b>')
-                .openPopup();
-        }
-
-    }, 300); // 300ms timeout
-}
-
-function closeMapLightbox() {
-    const lightbox = document.getElementById('mapLightbox');
-    lightbox.classList.remove('show');
-}
 
 // ============================================
 // Initialize

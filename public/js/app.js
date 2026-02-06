@@ -745,13 +745,26 @@ document.addEventListener('DOMContentLoaded', () => {
 // AI Face Detection
 // ============================================
 async function loadFaceModel() {
+    const btn = document.getElementById('startCameraBtn');
+
     try {
         console.log('⏳ Đang tải Face Model...');
         faceModel = await blazeface.load();
         console.log('✅ Face Model đã tải xong!');
+
+        if (btn) {
+            btn.innerHTML = '📸 Bật Camera';
+            btn.disabled = false;
+        }
+        // showToast('AI Đã sẵn sàng!', 'success'); // Optional: show toast
     } catch (error) {
         console.error('Lỗi tải Face Model:', error);
-        showToast('Không thể tải AI nhận diện khuôn mặt!', 'error');
+        showToast('Không thể tải AI nhận diện khuôn mặt! (Chuyển sang chế độ thường)', 'warning');
+
+        if (btn) {
+            btn.innerHTML = '📸 Bật Camera (No AI)';
+            btn.disabled = false;
+        }
     }
 }
 
