@@ -119,8 +119,8 @@ function viewDetail(id) {
     const photoEl = document.getElementById('detailPhoto');
     const noPhotoText = document.getElementById('noPhotoText');
 
-    if (currentRequest.photo_path) {
-        photoEl.src = currentRequest.photo_path;
+    if (currentRequest.photo_url) {
+        photoEl.src = currentRequest.photo_url;
         photoEl.style.display = 'block';
         noPhotoText.style.display = 'none';
     } else {
