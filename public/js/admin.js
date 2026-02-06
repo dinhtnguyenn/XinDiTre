@@ -100,6 +100,15 @@ const deleteAllBtn = document.getElementById('deleteAllBtn');
 const selectedCountSpan = document.getElementById('selectedCount');
 let selectedIds = new Set();
 
+// Pagination Elements & State
+const pageSizeSelect = document.getElementById('pageSize');
+const prevPageBtn = document.getElementById('prevPage');
+const nextPageBtn = document.getElementById('nextPage');
+const paginationPages = document.getElementById('paginationPages');
+const paginationTotal = document.getElementById('paginationTotal');
+let currentPage = 1;
+let pageSize = 20;
+
 // ============================================
 // Fetch Statistics & Charts
 // ============================================
@@ -278,10 +287,9 @@ async function fetchRequests() {
 }
 
 // ============================================
-// Render Table
+// Render Table with Pagination
 // ============================================
 function renderTable() {
-    resultCount.textContent = `Hiển thị ${requests.length} yêu cầu`;
     selectedIds.clear();
     updateSelectedCount();
     selectAllCheckbox.checked = false;
@@ -294,15 +302,34 @@ function renderTable() {
                 </td>
             </tr>
         `;
+        resultCount.textContent = 'Không có yêu cầu';
+        paginationTotal.textContent = '';
+        paginationPages.innerHTML = '';
+        prevPageBtn.disabled = true;
+        nextPageBtn.disabled = true;
         return;
     }
 
-    requestsBody.innerHTML = requests.map((req, index) => {
+    // Calculate pagination
+    const totalPages = Math.ceil(requests.length / pageSize);
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize, requests.length);
+    const paginatedRequests = requests.slice(startIndex, endIndex);
+
+    // Update info
+    resultCount.textContent = `Hiển thị ${startIndex + 1}-${endIndex}`;
+    paginationTotal.textContent = `/ ${requests.length} yêu cầu`;
+
+    requestsBody.innerHTML = paginatedRequests.map((req, index) => {
         const statusHtml = getDeadlineStatusHtml(req.is_within_deadline, req.deadline_message);
+        const globalIndex = startIndex + index + 1;
         return `
             <tr data-id="${req.id}">
                 <td><input type="checkbox" class="row-checkbox" value="${req.id}" onchange="toggleRowSelect(${req.id}, this)"></td>
-                <td>${index + 1}</td>
+                <td>${globalIndex}</td>
                 <td><strong>${escapeHtml(req.mssv)}</strong></td>
                 <td>${escapeHtml(req.fullname)}</td>
                 <td>${escapeHtml(req.class_session)}</td>
@@ -316,6 +343,49 @@ function renderTable() {
             </tr>
         `;
     }).join('');
+
+    // Render pagination controls
+    renderPagination(totalPages);
+}
+
+function renderPagination(totalPages) {
+    prevPageBtn.disabled = currentPage <= 1;
+    nextPageBtn.disabled = currentPage >= totalPages;
+
+    let pagesHtml = '';
+
+    if (totalPages <= 7) {
+        // Show all pages
+        for (let i = 1; i <= totalPages; i++) {
+            pagesHtml += `<button class="pagination-page ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+        }
+    } else {
+        // Show first, last, current and neighbors
+        pagesHtml += `<button class="pagination-page ${1 === currentPage ? 'active' : ''}" onclick="goToPage(1)">1</button>`;
+
+        if (currentPage > 3) {
+            pagesHtml += '<span class="pagination-page ellipsis">...</span>';
+        }
+
+        for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
+            pagesHtml += `<button class="pagination-page ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+        }
+
+        if (currentPage < totalPages - 2) {
+            pagesHtml += '<span class="pagination-page ellipsis">...</span>';
+        }
+
+        pagesHtml += `<button class="pagination-page ${totalPages === currentPage ? 'active' : ''}" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+    }
+
+    paginationPages.innerHTML = pagesHtml;
+}
+
+function goToPage(page) {
+    currentPage = page;
+    renderTable();
+    // Scroll to top of table
+    document.querySelector('.table-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function getDeadlineStatusHtml(isWithin, message) {
@@ -410,20 +480,37 @@ async function viewStudentHistory() {
             historyBody.innerHTML = result.data.map((req, index) => {
                 const statusHtml = getDeadlineStatusHtml(req.is_within_deadline, req.deadline_message);
                 return `
-                    <tr>
+                    <tr class="clickable-row" onclick="viewHistoryDetail(${req.id})" title="Click để xem chi tiết">
                         <td>${index + 1}</td>
                         <td>${escapeHtml(req.class_session)}</td>
                         <td>${formatDateTime(req.created_at)}</td>
                         <td>${statusHtml}</td>
+                        <td><button class="action-btn btn-sm">Xem</button></td>
                     </tr>
                 `;
             }).join('');
 
             closeModalFn();
             historyModal.classList.add('show');
+
+            // Store history data for later use
+            window.historyData = result.data;
         }
     } catch (error) {
         showToast('Không thể tải lịch sử!', 'error');
+    }
+}
+
+// View detail from history
+function viewHistoryDetail(id) {
+    const historyReq = window.historyData?.find(r => r.id === id);
+    if (historyReq) {
+        // Add to requests if not exists
+        if (!requests.find(r => r.id === id)) {
+            requests.push(historyReq);
+        }
+        closeHistoryModalFn();
+        viewDetail(id);
     }
 }
 
@@ -543,12 +630,46 @@ document.getElementById('logoutBtn').addEventListener('click', (e) => {
 });
 
 refreshBtn.addEventListener('click', () => {
+    currentPage = 1;
     fetchRequests();
     fetchStatistics();
 });
-searchInput.addEventListener('input', handleSearch);
-filterSelect.addEventListener('change', fetchRequests);
-deadlineFilter.addEventListener('change', fetchRequests);
+searchInput.addEventListener('input', () => {
+    currentPage = 1;
+    handleSearch();
+});
+filterSelect.addEventListener('change', () => {
+    currentPage = 1;
+    fetchRequests();
+});
+deadlineFilter.addEventListener('change', () => {
+    currentPage = 1;
+    fetchRequests();
+});
+
+// Pagination Events
+pageSizeSelect.addEventListener('change', (e) => {
+    pageSize = parseInt(e.target.value);
+    currentPage = 1;
+    renderTable();
+});
+
+prevPageBtn.addEventListener('click', () => {
+    if (currentPage > 1) {
+        currentPage--;
+        renderTable();
+        document.querySelector('.table-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+});
+
+nextPageBtn.addEventListener('click', () => {
+    const totalPages = Math.ceil(requests.length / pageSize);
+    if (currentPage < totalPages) {
+        currentPage++;
+        renderTable();
+        document.querySelector('.table-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+});
 
 closeModal.addEventListener('click', closeModalFn);
 deleteBtn.addEventListener('click', deleteRequest);

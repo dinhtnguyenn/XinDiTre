@@ -140,6 +140,9 @@
                         <span id="resultCount" style="color: #64748b; font-size: 0.875rem;"></span>
                         <span id="selectedCount"
                             style="color: #6366f1; font-size: 0.875rem; margin-left: 16px; display: none;"></span>
+                        <button id="exportExcelBtn" class="btn btn-success btn-sm" style="margin-left: 12px;">
+                            <span>📥</span> Export Excel
+                        </button>
                         <button id="deleteSelectedBtn" class="btn btn-danger btn-sm"
                             style="display: none; margin-left: 12px;">
                             <span>🗑️</span> Xóa đã chọn
@@ -174,11 +177,36 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pagination -->
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        <span>Hiển thị</span>
+                        <select id="pageSize">
+                            <option value="10">10</option>
+                            <option value="20" selected>20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span>/ trang</span>
+                        <span class="pagination-total" id="paginationTotal"></span>
+                    </div>
+                    <div class="pagination-controls" id="paginationControls">
+                        <button class="pagination-btn" id="prevPage" disabled>
+                            ← Trước
+                        </button>
+                        <div class="pagination-pages" id="paginationPages">
+                        </div>
+                        <button class="pagination-btn" id="nextPage">
+                            Sau →
+                        </button>
+                    </div>
+                </div>
             </div>
         </main>
 
         <footer class="footer">
-            <p>© 2026 - Hệ thống Xin Đi Trễ | ⏱️ Hạn xin: 14p30s sau khi bắt đầu ca</p>
+            <p>© 2026 - Hệ thống Xin Đi Trễ | DinhNT24</p>
         </footer>
     </div>
 
@@ -264,6 +292,7 @@
                                 <th>Ca học</th>
                                 <th>Thời gian</th>
                                 <th>Trạng thái</th>
+                                <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="historyBody">

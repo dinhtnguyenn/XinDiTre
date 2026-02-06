@@ -1204,6 +1204,20 @@ tbody tr:last-child td {
     font-size: 0.875rem;
 }
 
+#historyModal .clickable-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#historyModal .clickable-row:hover {
+    background-color: rgba(99, 102, 241, 0.1);
+}
+
+.action-btn.btn-sm {
+    padding: 4px 10px;
+    font-size: 0.75rem;
+}
+
 /* ============================================
    Lightbox - Image Zoom
    ============================================ */
@@ -1308,4 +1322,106 @@ tbody tr:last-child td {
 
 #requestsTable tbody tr.selected:hover {
     background: rgba(99, 102, 241, 0.15);
+}
+
+/* ============================================
+   Pagination
+   ============================================ */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-top: 1px solid #e2e8f0;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.pagination-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.pagination-info select {
+    padding: 6px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.pagination-total {
+    margin-left: 12px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.pagination-btn {
+    padding: 8px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #fff;
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: var(--transition);
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-pages {
+    display: flex;
+    gap: 4px;
+}
+
+.pagination-page {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: var(--transition);
+}
+
+.pagination-page:hover {
+    background: #f1f5f9;
+}
+
+.pagination-page.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.pagination-page.ellipsis {
+    border: none;
+    cursor: default;
+}
+
+.pagination-page.ellipsis:hover {
+    background: transparent;
 }
