@@ -93,6 +93,13 @@ const closeHistoryModal = document.getElementById('closeHistoryModal');
 
 const toast = document.getElementById('toast');
 
+// Bulk Delete Elements
+const selectAllCheckbox = document.getElementById('selectAll');
+const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
+const deleteAllBtn = document.getElementById('deleteAllBtn');
+const selectedCountSpan = document.getElementById('selectedCount');
+let selectedIds = new Set();
+
 // ============================================
 // Fetch Statistics & Charts
 // ============================================
@@ -222,7 +229,7 @@ function renderTopStudents(students) {
 async function fetchRequests() {
     requestsBody.innerHTML = `
         <tr>
-            <td colspan="7" class="loading-row">
+            <td colspan="8" class="loading-row">
                 <span class="loader"></span>
                 Đang tải dữ liệu...
             </td>
@@ -262,7 +269,7 @@ async function fetchRequests() {
         console.error('Lỗi khi tải dữ liệu:', error);
         requestsBody.innerHTML = `
             <tr>
-                <td colspan="7" class="empty-row">
+                <td colspan="8" class="empty-row">
                     ❌ Không thể kết nối đến server
                 </td>
             </tr>
@@ -275,11 +282,14 @@ async function fetchRequests() {
 // ============================================
 function renderTable() {
     resultCount.textContent = `Hiển thị ${requests.length} yêu cầu`;
+    selectedIds.clear();
+    updateSelectedCount();
+    selectAllCheckbox.checked = false;
 
     if (requests.length === 0) {
         requestsBody.innerHTML = `
             <tr>
-                <td colspan="7" class="empty-row">
+                <td colspan="8" class="empty-row">
                     📭 Không tìm thấy yêu cầu nào
                 </td>
             </tr>
@@ -290,7 +300,8 @@ function renderTable() {
     requestsBody.innerHTML = requests.map((req, index) => {
         const statusHtml = getDeadlineStatusHtml(req.is_within_deadline, req.deadline_message);
         return `
-            <tr>
+            <tr data-id="${req.id}">
+                <td><input type="checkbox" class="row-checkbox" value="${req.id}" onchange="toggleRowSelect(${req.id}, this)"></td>
                 <td>${index + 1}</td>
                 <td><strong>${escapeHtml(req.mssv)}</strong></td>
                 <td>${escapeHtml(req.fullname)}</td>
@@ -557,8 +568,140 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeModalFn();
         closeHistoryModalFn();
+        closeLightbox();
     }
 });
+
+// Bulk Delete Events
+selectAllCheckbox.addEventListener('change', (e) => {
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = e.target.checked;
+        const id = parseInt(cb.value);
+        const row = cb.closest('tr');
+        if (e.target.checked) {
+            selectedIds.add(id);
+            row.classList.add('selected');
+        } else {
+            selectedIds.delete(id);
+            row.classList.remove('selected');
+        }
+    });
+    updateSelectedCount();
+});
+
+deleteSelectedBtn.addEventListener('click', deleteSelectedRequests);
+deleteAllBtn.addEventListener('click', deleteAllRequests);
+
+// ============================================
+// Checkbox & Bulk Delete Functions
+// ============================================
+function toggleRowSelect(id, checkbox) {
+    const row = checkbox.closest('tr');
+    if (checkbox.checked) {
+        selectedIds.add(id);
+        row.classList.add('selected');
+    } else {
+        selectedIds.delete(id);
+        row.classList.remove('selected');
+    }
+    updateSelectedCount();
+
+    // Update select all checkbox
+    const allCheckboxes = document.querySelectorAll('.row-checkbox');
+    selectAllCheckbox.checked = selectedIds.size === allCheckboxes.length && allCheckboxes.length > 0;
+}
+
+function updateSelectedCount() {
+    if (selectedIds.size > 0) {
+        selectedCountSpan.textContent = `(Đã chọn ${selectedIds.size})`;
+        selectedCountSpan.style.display = 'inline';
+        deleteSelectedBtn.style.display = 'inline-flex';
+    } else {
+        selectedCountSpan.style.display = 'none';
+        deleteSelectedBtn.style.display = 'none';
+    }
+}
+
+async function deleteSelectedRequests() {
+    if (selectedIds.size === 0) return;
+
+    if (!confirm(`Bạn có chắc chắn muốn xóa ${selectedIds.size} yêu cầu đã chọn?`)) return;
+
+    try {
+        const response = await fetch('/api/late-requests/bulk-delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({ ids: Array.from(selectedIds) })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showToast(`Đã xóa ${result.deletedCount} yêu cầu!`, 'success');
+            fetchRequests();
+            fetchStatistics();
+        } else {
+            showToast(result.message || 'Không thể xóa!', 'error');
+        }
+    } catch (error) {
+        showToast('Lỗi kết nối server!', 'error');
+    }
+}
+
+async function deleteAllRequests() {
+    if (requests.length === 0) {
+        showToast('Không có yêu cầu nào để xóa!', 'info');
+        return;
+    }
+
+    const confirmText = prompt(`Nhập "XOA TAT CA" để xác nhận xóa tất cả ${requests.length} yêu cầu:`);
+    if (confirmText !== 'XOA TAT CA') {
+        showToast('Đã hủy thao tác xóa!', 'info');
+        return;
+    }
+
+    try {
+        const allIds = requests.map(r => r.id);
+        const response = await fetch('/api/late-requests/bulk-delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({ ids: allIds })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showToast(`Đã xóa tất cả ${result.deletedCount} yêu cầu!`, 'success');
+            fetchRequests();
+            fetchStatistics();
+        } else {
+            showToast(result.message || 'Không thể xóa!', 'error');
+        }
+    } catch (error) {
+        showToast('Lỗi kết nối server!', 'error');
+    }
+}
+
+// ============================================
+// Lightbox Functions
+// ============================================
+function openLightbox(src) {
+    if (!src) return;
+    document.getElementById('lightboxImage').src = src;
+    document.getElementById('lightboxCaption').textContent = 'Nhấn ESC hoặc click để đóng';
+    document.getElementById('imageLightbox').classList.add('show');
+}
+
+function closeLightbox() {
+    document.getElementById('imageLightbox').classList.remove('show');
+}
 
 // ============================================
 // Initialize

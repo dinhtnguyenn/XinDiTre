@@ -136,13 +136,25 @@
             <div class="table-card">
                 <div class="table-header">
                     <h2>Danh sách yêu cầu</h2>
-                    <span id="resultCount" style="color: #64748b; font-size: 0.875rem;"></span>
+                    <div class="table-actions">
+                        <span id="resultCount" style="color: #64748b; font-size: 0.875rem;"></span>
+                        <span id="selectedCount"
+                            style="color: #6366f1; font-size: 0.875rem; margin-left: 16px; display: none;"></span>
+                        <button id="deleteSelectedBtn" class="btn btn-danger btn-sm"
+                            style="display: none; margin-left: 12px;">
+                            <span>🗑️</span> Xóa đã chọn
+                        </button>
+                        <button id="deleteAllBtn" class="btn btn-danger btn-sm" style="margin-left: 12px;">
+                            <span>🗑️</span> Xóa tất cả
+                        </button>
+                    </div>
                 </div>
 
                 <div class="table-container">
                     <table id="requestsTable">
                         <thead>
                             <tr>
+                                <th style="width: 40px;"><input type="checkbox" id="selectAll" title="Chọn tất cả"></th>
                                 <th>STT</th>
                                 <th>MSSV</th>
                                 <th>Họ tên</th>
@@ -154,7 +166,7 @@
                         </thead>
                         <tbody id="requestsBody">
                             <tr>
-                                <td colspan="7" class="loading-row">
+                                <td colspan="8" class="loading-row">
                                     <span class="loader"></span>
                                     Đang tải dữ liệu...
                                 </td>
@@ -204,8 +216,9 @@
 
                 <div class="media-section">
                     <div class="photo-section">
-                        <h3>📸 Ảnh xác nhận</h3>
-                        <img id="detailPhoto" src="" alt="Ảnh sinh viên">
+                        <h3>📸 Ảnh xác nhận <small style="color: #64748b;">(Click để phóng to)</small></h3>
+                        <img id="detailPhoto" src="" alt="Ảnh sinh viên" class="clickable-photo"
+                            onclick="openLightbox(this.src)">
                         <p id="noPhotoText" style="display: none;">Không có ảnh</p>
                     </div>
 
@@ -259,6 +272,13 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Image Lightbox -->
+    <div id="imageLightbox" class="lightbox" onclick="closeLightbox()">
+        <span class="lightbox-close">&times;</span>
+        <img id="lightboxImage" src="" alt="Phóng to ảnh">
+        <div class="lightbox-caption" id="lightboxCaption"></div>
     </div>
 
     <!-- Toast notification -->

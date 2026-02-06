@@ -631,6 +631,41 @@ app.delete('/api/late-requests/:id', requireAdminAuth, async (req, res) => {
 });
 
 // ============================================
+// API: Admin xóa nhiều yêu cầu (Bulk Delete)
+// ============================================
+app.post('/api/late-requests/bulk-delete', requireAdminAuth, async (req, res) => {
+    try {
+        const { ids } = req.body;
+
+        if (!ids || !Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng chọn ít nhất 1 yêu cầu để xóa!'
+            });
+        }
+
+        let deletedCount = 0;
+        for (const id of ids) {
+            try {
+                await deleteRequest(id);
+                deletedCount++;
+            } catch (err) {
+                console.error(`Lỗi xóa ID ${id}:`, err);
+            }
+        }
+
+        res.json({
+            success: true,
+            message: `Đã xóa ${deletedCount}/${ids.length} yêu cầu!`,
+            deletedCount
+        });
+    } catch (error) {
+        console.error('Lỗi bulk delete:', error);
+        res.status(500).json({ success: false, message: 'Có lỗi xảy ra!' });
+    }
+});
+
+// ============================================
 // Khởi động server
 // ============================================
 initDatabase().then(() => {
