@@ -97,6 +97,7 @@ const toast = document.getElementById('toast');
 const selectAllCheckbox = document.getElementById('selectAll');
 const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
 const deleteAllBtn = document.getElementById('deleteAllBtn');
+const exportExcelBtn = document.getElementById('exportExcelBtn');
 const selectedCountSpan = document.getElementById('selectedCount');
 let selectedIds = new Set();
 
@@ -713,6 +714,7 @@ selectAllCheckbox.addEventListener('change', (e) => {
 
 deleteSelectedBtn.addEventListener('click', deleteSelectedRequests);
 deleteAllBtn.addEventListener('click', deleteAllRequests);
+exportExcelBtn.addEventListener('click', exportToExcel);
 
 // ============================================
 // Checkbox & Bulk Delete Functions
@@ -822,6 +824,71 @@ function openLightbox(src) {
 
 function closeLightbox() {
     document.getElementById('imageLightbox').classList.remove('show');
+}
+
+// ============================================
+// Export Excel Function
+// ============================================
+function exportToExcel() {
+    if (!requests || requests.length === 0) {
+        showToast('Không có dữ liệu để xuất!', 'info');
+        return;
+    }
+
+    try {
+        // Prepare data for export
+        const exportData = requests.map((req, index) => {
+            let status = 'Không xác định';
+            if (req.is_within_deadline === true) status = 'Trong hạn';
+            else if (req.is_within_deadline === false) status = 'Ngoài hạn';
+
+            return {
+                'STT': index + 1,
+                'MSSV': req.mssv,
+                'Họ tên': req.fullname,
+                'Ca học': req.class_session,
+                'Thời gian gửi': new Date(req.created_at).toLocaleString('vi-VN'),
+                'Trạng thái': status,
+                'Chi tiết trạng thái': req.deadline_message || '',
+                'Lý do': req.reason || '',
+                'Địa chỉ': req.address || '',
+                'Tọa độ': `${req.latitude || ''}, ${req.longitude || ''}`
+            };
+        });
+
+        // Create workbook and worksheet
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(exportData);
+
+        // Adjust column widths
+        const wscols = [
+            { wch: 5 },  // STT
+            { wch: 10 }, // MSSV
+            { wch: 25 }, // Họ tên
+            { wch: 10 }, // Ca học
+            { wch: 20 }, // Thời gian
+            { wch: 15 }, // Trạng thái
+            { wch: 30 }, // Chi tiết
+            { wch: 30 }, // Lý do
+            { wch: 40 }, // Địa chỉ
+            { wch: 25 }  // Tọa độ
+        ];
+        ws['!cols'] = wscols;
+
+        XLSX.utils.book_append_sheet(wb, ws, "Danh sách xin đi trễ");
+
+        // Generate filename with current date
+        const date = new Date();
+        const dateStr = `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`;
+        const fileName = `Danh_sach_xin_di_tre_${dateStr}.xlsx`;
+
+        // Save file
+        XLSX.writeFile(wb, fileName);
+        showToast('Đã xuất file Excel thành công!', 'success');
+    } catch (error) {
+        console.error('Lỗi export Excel:', error);
+        showToast('Không thể xuất file Excel!', 'error');
+    }
 }
 
 // ============================================
