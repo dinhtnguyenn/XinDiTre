@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Quản lý yêu cầu xin đi trễ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+</head>
+
+<body class="admin-page">
+    <!-- Login Modal -->
+    <div id="loginModal" class="modal show">
+        <div class="modal-content" style="max-width: 400px;">
+            <h2 class="modal-title" style="text-align: center;">🔐 Đăng nhập Admin</h2>
+            <div class="modal-body">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="password">Mật khẩu</label>
+                        <input type="password" id="password" name="password" placeholder="Nhập mật khẩu..." required
+                            autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn btn-submit" style="margin-top: 16px;">
+                        <span>🔓</span> Đăng nhập
+                    </button>
+                </form>
+                <p id="loginError" style="color: #ef4444; text-align: center; margin-top: 12px; display: none;"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminContent" class="container" style="display: none;">
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">👨‍🏫</span>
+                <h1>Trang Quản Lý</h1>
+                <button id="darkModeToggle" class="theme-toggle" title="Chế độ tối/sáng">
+                    🌓
+                </button>
+            </div>
+            <p class="subtitle">Danh sách yêu cầu xin đi trễ của sinh viên</p>
+            <div style="margin-top: 12px;">
+                <a href="index.html" class="back-link">← Về trang sinh viên</a>
+                <span style="margin: 0 10px; color: rgba(255,255,255,0.5);">|</span>
+                <a href="#" id="logoutBtn" class="back-link">🚪 Đăng xuất</a>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- Thống kê -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <span class="stat-icon">📋</span>
+                    <div class="stat-info">
+                        <span class="stat-number" id="totalRequests">0</span>
+                        <span class="stat-label">Tổng yêu cầu</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">✅</span>
+                    <div class="stat-info">
+                        <span class="stat-number" id="withinDeadline" style="color: #10b981;">0</span>
+                        <span class="stat-label">Trong hạn</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">❌</span>
+                    <div class="stat-info">
+                        <span class="stat-number" id="outsideDeadline" style="color: #ef4444;">0</span>
+                        <span class="stat-label">Ngoài hạn</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">�</span>
+                    <div class="stat-info">
+                        <span class="stat-number" id="todayRequests">0</span>
+                        <span class="stat-label">Hôm nay</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Biểu đồ thống kê -->
+            <div class="charts-row">
+                <div class="chart-card">
+                    <h3>📈 Số lượng yêu cầu theo ngày (7 ngày)</h3>
+                    <canvas id="dailyChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>📊 Phân bố theo ca học</h3>
+                    <canvas id="classChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Biểu đồ tuần/tháng và Top sinh viên -->
+            <div class="charts-row">
+                <div class="chart-card">
+                    <h3>📅 Thống kê theo tháng (6 tháng)</h3>
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>🏆 Top sinh viên xin nhiều nhất (tháng này)</h3>
+                    <div class="top-students-list" id="topStudentsList">
+                        <p style="color: #64748b; text-align: center;">Đang tải...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bộ lọc và tìm kiếm -->
+            <div class="filter-row">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Tìm theo MSSV hoặc tên...">
+                </div>
+                <div class="filter-box">
+                    <select id="filterSelect">
+                        <option value="">📅 Tất cả thời gian</option>
+                        <option value="today">Hôm nay</option>
+                        <option value="week">7 ngày qua</option>
+                        <option value="month">Tháng này</option>
+                    </select>
+                </div>
+                <div class="filter-box">
+                    <select id="deadlineFilter">
+                        <option value="">⏰ Tất cả trạng thái</option>
+                        <option value="within">✅ Trong hạn</option>
+                        <option value="outside">❌ Ngoài hạn</option>
+                    </select>
+                </div>
+                <button id="refreshBtn" class="btn btn-secondary btn-sm">
+                    <span>🔄</span> Làm mới
+                </button>
+            </div>
+
+            <!-- Bảng danh sách -->
+            <div class="table-card">
+                <div class="table-header">
+                    <h2>Danh sách yêu cầu</h2>
+                    <div class="table-actions">
+                        <span id="resultCount" style="color: #64748b; font-size: 0.875rem;"></span>
+                        <span id="selectedCount"
+                            style="color: #6366f1; font-size: 0.875rem; margin-left: 16px; display: none;"></span>
+                        <button id="exportExcelBtn" class="btn btn-success btn-sm" style="margin-left: 12px;">
+                            <span>📥</span> Export Excel
+                        </button>
+                        <button id="deleteSelectedBtn" class="btn btn-danger btn-sm"
+                            style="display: none; margin-left: 12px;">
+                            <span>🗑️</span> Xóa đã chọn
+                        </button>
+                        <button id="deleteAllBtn" class="btn btn-danger btn-sm" style="margin-left: 12px;">
+                            <span>🗑️</span> Xóa tất cả
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table id="requestsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 40px;"><input type="checkbox" id="selectAll" title="Chọn tất cả"></th>
+                                <th>STT</th>
+                                <th>MSSV</th>
+                                <th>Họ tên</th>
+                                <th>Ca học</th>
+                                <th>Thời gian</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requestsBody">
+                            <tr>
+                                <td colspan="8" class="loading-row">
+                                    <span class="loader"></span>
+                                    Đang tải dữ liệu...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        <span>Hiển thị</span>
+                        <select id="pageSize">
+                            <option value="10">10</option>
+                            <option value="20" selected>20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                        <span>/ trang</span>
+                        <span class="pagination-total" id="paginationTotal"></span>
+                    </div>
+                    <div class="pagination-controls" id="paginationControls">
+                        <button class="pagination-btn" id="prevPage" disabled>
+                            ← Trước
+                        </button>
+                        <div class="pagination-pages" id="paginationPages">
+                        </div>
+                        <button class="pagination-btn" id="nextPage">
+                            Sau →
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>© 2026 - Hệ thống Xin Đi Trễ | DinhNT24</p>
+        </footer>
+    </div>
+
+    <!-- Modal chi tiết -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeModal">&times;</button>
+            <h2 class="modal-title">Chi tiết yêu cầu</h2>
+
+            <div class="modal-body">
+                <div class="deadline-badge" id="deadlineBadge"></div>
+
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>MSSV:</label>
+                        <span id="detailMssv"></span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Họ tên:</label>
+                        <span id="detailFullname"></span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Ca học:</label>
+                        <span id="detailClassSession"></span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Thời gian gửi:</label>
+                        <span id="detailTime"></span>
+                    </div>
+                    <div class="detail-item full-width">
+                        <label>Lý do:</label>
+                        <p id="detailReason"></p>
+                    </div>
+                </div>
+
+                <div class="media-section">
+                    <div class="photo-section">
+                        <h3>📸 Ảnh xác nhận <small style="color: #64748b;">(Click để phóng to)</small></h3>
+                        <img id="detailPhoto" src="" alt="Ảnh sinh viên" class="clickable-photo"
+                            onclick="openLightbox(this.src)">
+                        <p id="noPhotoText" style="display: none;">Không có ảnh</p>
+                    </div>
+
+                    <div class="map-section">
+                        <h3>📍 Vị trí</h3>
+                        <div id="detailMap"></div>
+                        <p id="detailAddress"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="viewHistoryBtn" class="btn btn-secondary">
+                    <span>📜</span> Xem lịch sử SV này
+                </button>
+                <button id="deleteBtn" class="btn btn-danger">
+                    <span>🗑️</span> Xóa yêu cầu
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal lịch sử sinh viên -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeHistoryModal">&times;</button>
+            <h2 class="modal-title">📜 Lịch sử xin đi trễ</h2>
+
+            <div class="modal-body">
+                <div class="student-info"
+                    style="margin-bottom: 20px; padding: 16px; background: #f1f5f9; border-radius: 8px;">
+                    <strong id="historyStudentName"></strong>
+                    <span style="color: #64748b;"> - MSSV: <span id="historyMssv"></span></span>
+                    <span style="float: right; color: #6366f1; font-weight: 600;">Tổng: <span id="historyTotal"></span>
+                        lần</span>
+                </div>
+
+                <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Ca học</th>
+                                <th>Thời gian</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Lightbox -->
+    <div id="imageLightbox" class="lightbox" onclick="closeLightbox()">
+        <span class="lightbox-close">&times;</span>
+        <img id="lightboxImage" src="" alt="Phóng to ảnh">
+        <div class="lightbox-caption" id="lightboxCaption"></div>
+    </div>
+
+
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/protect.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+
+</html>

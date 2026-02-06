@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xin Đi Trễ - Sinh Viên</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🎓</span>
+                <h1>Xin Đi Trễ</h1>
+                <button id="darkModeToggle" class="theme-toggle" title="Chế độ tối/sáng">
+                    🌓
+                </button>
+            </div>
+            <p class="subtitle">Hệ thống xin phép đi trễ dành cho sinh viên</p>
+
+            <!-- Countdown Timer -->
+            <div class="countdown-box" id="countdownBox" style="display: none;">
+                <span class="countdown-label">⏰ Còn lại để xin đi trễ:</span>
+                <span class="countdown-timer" id="countdownTimer">--:--</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <form id="lateRequestForm" class="form-card">
+                <!-- Thông tin sinh viên -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <span class="section-icon">📝</span>
+                        Thông tin sinh viên
+                    </h2>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="mssv">Mã số sinh viên</label>
+                            <div class="input-with-btn">
+                                <input type="text" id="mssv" name="mssv" placeholder="VD: PS12345" required>
+                                <button type="button" id="viewHistoryBtn" class="btn btn-sm btn-secondary"
+                                    title="Xem lịch sử">
+                                    📜
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="fullname">Họ và tên</label>
+                            <input type="text" id="fullname" name="fullname" placeholder="VD: Nguyễn Văn A" required>
+                        </div>
+                    </div>
+
+                    <!-- Số lần xin trong tháng -->
+                    <div class="monthly-count-box" id="monthlyCountBox" style="display: none;">
+                        <span class="monthly-count-icon">📊</span>
+                        <span class="monthly-count-text" id="monthlyCountText">Bạn đã xin 0 lần trong tháng này</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="class_session">Ca học <span id="suggestedSessionLabel"
+                                class="suggested-label"></span></label>
+                        <select id="class_session" name="class_session" required>
+                            <option value="">-- Chọn ca học --</option>
+                            <option value="Ca 1 (07:15 - 09:15)">Ca 1 (07:15 - 09:15)</option>
+                            <option value="Ca 2 (09:25 - 11:25)">Ca 2 (09:25 - 11:25)</option>
+                            <option value="Ca 3 (12:00 - 14:00)">Ca 3 (12:00 - 14:00)</option>
+                            <option value="Ca 4 (14:10 - 16:10)">Ca 4 (14:10 - 16:10)</option>
+                            <option value="Ca 5 (16:20 - 18:20)">Ca 5 (16:20 - 18:20)</option>
+                            <option value="Ca 6 (18:30 - 20:30)">Ca 6 (18:30 - 20:30)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reason">Lý do đi trễ</label>
+                        <textarea id="reason" name="reason" rows="3" placeholder="VD: Kẹt xe trên đường..."
+                            required></textarea>
+                    </div>
+                </div>
+
+                <!-- Camera & GPS -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <span class="section-icon">📸</span>
+                        Ảnh xác nhận & Vị trí
+                    </h2>
+
+                    <div class="camera-section">
+                        <div class="camera-container" id="cameraContainer">
+                            <video id="video" autoplay playsinline></video>
+                            <canvas id="canvas" style="display: none;"></canvas>
+                            <img id="photoPreview" class="photo-preview" style="display: none;">
+                            <div class="camera-overlay" id="cameraOverlay">
+                                <span class="camera-icon">📷</span>
+                                <p>Nhấn để bật camera</p>
+                            </div>
+                        </div>
+
+                        <div class="camera-controls">
+                            <button type="button" id="startCameraBtn" class="btn btn-secondary" disabled>
+                                ⏳ Đang tải AI nhận diện khuôn mặt...
+                            </button>
+                            <button type="button" id="captureBtn" class="btn btn-primary" style="display: none;">
+                                <span>📸</span> Chụp ảnh
+                            </button>
+                            <button type="button" id="retakeBtn" class="btn btn-secondary" style="display: none;">
+                                <span>🔄</span> Chụp lại
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="location-section">
+                        <div class="location-status" id="locationStatus">
+                            <span class="location-icon">📍</span>
+                            <span class="location-text">Đang lấy vị trí của bạn...</span>
+                        </div>
+                        <div class="location-details" id="locationDetails" style="display: none;">
+                            <p id="addressText"></p>
+                            <small id="coordsText"></small>
+                            <div class="distance-info" id="distanceInfo"
+                                style="display: none; margin-top: 8px; font-weight: 600; color: var(--primary);">
+                                📍 Cách trường: <span id="distanceValue">--</span> km
+                            </div>
+                        </div>
+                        <!-- Mini Map -->
+                        <div class="mini-map-container" id="miniMapContainer" style="display: none;">
+                            <div id="miniMap" class="mini-map"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="form-actions">
+                    <button type="submit" id="submitBtn" class="btn btn-submit">
+                        <span>🚀</span> Gửi yêu cầu
+                    </button>
+                </div>
+            </form>
+        </main>
+
+        <footer class="footer">
+            <p>© 2026 - Hệ thống Xin Đi Trễ | DinhNT24</p>
+        </footer>
+    </div>
+
+    <!-- Modal lịch sử sinh viên -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeHistoryModal">&times;</button>
+            <h2 class="modal-title">📜 Lịch sử xin đi trễ của bạn</h2>
+
+            <div class="modal-body">
+                <div class="student-info"
+                    style="margin-bottom: 20px; padding: 16px; background: #f1f5f9; border-radius: 8px;">
+                    <strong id="historyStudentName"></strong>
+                    <span style="color: #64748b;"> - MSSV: <span id="historyMssv"></span></span>
+                    <span style="float: right; color: #6366f1; font-weight: 600;">Tổng: <span id="historyTotal"></span>
+                        lần</span>
+                </div>
+
+                <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Ca học</th>
+                                <th>Thời gian</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast"></div>
+
+    <!-- TensorFlow.js & BlazeFace -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface"></script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/protect.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>

@@ -113,6 +113,10 @@ body {
     min-height: 100vh;
     color: var(--text-primary);
     line-height: 1.6;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 
 /* ============================================
