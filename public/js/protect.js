@@ -24,7 +24,13 @@
                     <h1 style="font-size: 50px;">🚫 SECURITY ALERT</h1>
                     <p style="font-size: 24px;">Hệ thống phát hiện can thiệp!</p>
                     <p style="color: #666;">Reason: ${reason}</p>
-                    <button onclick="location.reload()" style="padding: 10px 20px; margin-top: 20px; cursor: pointer;">Tải lại trang</button>
+                    <button onclick="location.reload()" style="
+                        background: #6366f1; color: white; border: none; padding: 12px 24px;
+                        font-size: 16px; font-weight: 600; border-radius: 8px; margin-top: 24px;
+                        cursor: pointer; transition: background 0.2s; box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+                    " onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">
+                        ↻ Tải lại trang
+                    </button>
                 </div>
             `;
             // Stop all JS
