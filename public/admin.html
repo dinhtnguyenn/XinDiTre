@@ -84,12 +84,26 @@
             <!-- Biểu đồ thống kê -->
             <div class="charts-row">
                 <div class="chart-card">
-                    <h3>📈 Số lượng yêu cầu theo ngày</h3>
+                    <h3>📈 Số lượng yêu cầu theo ngày (7 ngày)</h3>
                     <canvas id="dailyChart"></canvas>
                 </div>
                 <div class="chart-card">
                     <h3>📊 Phân bố theo ca học</h3>
                     <canvas id="classChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Biểu đồ tuần/tháng và Top sinh viên -->
+            <div class="charts-row">
+                <div class="chart-card">
+                    <h3>📅 Thống kê theo tháng (6 tháng)</h3>
+                    <canvas id="monthlyChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>🏆 Top sinh viên xin nhiều nhất (tháng này)</h3>
+                    <div class="top-students-list" id="topStudentsList">
+                        <p style="color: #64748b; text-align: center;">Đang tải...</p>
+                    </div>
                 </div>
             </div>
 

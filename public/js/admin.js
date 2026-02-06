@@ -69,6 +69,7 @@ let currentRequest = null;
 let map = null;
 let dailyChart = null;
 let classChart = null;
+let monthlyChart = null;
 
 // DOM Elements
 const requestsBody = document.getElementById('requestsBody');
@@ -112,6 +113,8 @@ async function fetchStatistics() {
 
             renderDailyChart(result.daily);
             renderClassChart(result.byClass);
+            renderMonthlyChart(result.monthly);
+            renderTopStudents(result.topStudents);
         }
     } catch (error) {
         console.error('Lỗi khi lấy thống kê:', error);
@@ -164,6 +167,53 @@ function renderClassChart(data) {
             plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
         }
     });
+}
+
+function renderMonthlyChart(data) {
+    const ctx = document.getElementById('monthlyChart').getContext('2d');
+
+    if (monthlyChart) monthlyChart.destroy();
+
+    monthlyChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.map(d => d.label),
+            datasets: [{
+                label: 'Số yêu cầu',
+                data: data.map(d => d.count),
+                backgroundColor: '#8b5cf6',
+                borderRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        }
+    });
+}
+
+function renderTopStudents(students) {
+    const container = document.getElementById('topStudentsList');
+
+    if (!students || students.length === 0) {
+        container.innerHTML = '<p style="color: #64748b; text-align: center; padding: 20px;">Chưa có dữ liệu tháng này</p>';
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="top-students-table">
+            ${students.map((s, i) => `
+                <div class="top-student-row ${i === 0 ? 'first' : ''} ${i === 1 ? 'second' : ''} ${i === 2 ? 'third' : ''}">
+                    <span class="rank">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1)}</span>
+                    <span class="student-name">${escapeHtml(s.fullname)}</span>
+                    <span class="student-mssv">${escapeHtml(s.mssv)}</span>
+                    <span class="count">${s.count} lần</span>
+                </div>
+            `).join('')}
+        </div>
+    `;
 }
 
 // ============================================

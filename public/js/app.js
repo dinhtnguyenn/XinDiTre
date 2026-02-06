@@ -6,6 +6,7 @@ let photoBlob = null;
 let latitude = null;
 let longitude = null;
 let address = null;
+let isAutoFilled = false; // Track if fullname was auto-filled
 
 // DOM Elements
 const form = document.getElementById('lateRequestForm');
@@ -25,6 +26,58 @@ const coordsText = document.getElementById('coordsText');
 
 const submitBtn = document.getElementById('submitBtn');
 const toast = document.getElementById('toast');
+
+const mssvInput = document.getElementById('mssv');
+const fullnameInput = document.getElementById('fullname');
+
+// ============================================
+// MSSV Lookup - Auto fill họ tên
+// ============================================
+let lookupTimeout = null;
+
+async function lookupStudent(mssv) {
+    if (!mssv || mssv.length < 3) return;
+
+    try {
+        const response = await fetch(`/api/lookup-student/${encodeURIComponent(mssv)}`);
+        const result = await response.json();
+
+        if (result.success && result.found) {
+            fullnameInput.value = result.fullname;
+            fullnameInput.style.backgroundColor = '#f0fdf4'; // Light green to indicate auto-filled
+            isAutoFilled = true;
+            showToast(`Đã tìm thấy: ${result.fullname}`, 'success');
+        } else {
+            // Reset if not found
+            if (isAutoFilled) {
+                fullnameInput.value = '';
+                fullnameInput.style.backgroundColor = '';
+                isAutoFilled = false;
+            }
+        }
+    } catch (error) {
+        console.error('Lỗi lookup MSSV:', error);
+    }
+}
+
+// Event listener for MSSV input
+mssvInput.addEventListener('input', () => {
+    clearTimeout(lookupTimeout);
+    const mssv = mssvInput.value.trim();
+
+    // Debounce: chờ 500ms sau khi ngừng gõ
+    lookupTimeout = setTimeout(() => {
+        lookupStudent(mssv);
+    }, 500);
+});
+
+// Reset auto-fill indicator when user manually edits fullname
+fullnameInput.addEventListener('input', () => {
+    if (isAutoFilled) {
+        fullnameInput.style.backgroundColor = '';
+        isAutoFilled = false;
+    }
+});
 
 // ============================================
 // Camera Functions
@@ -166,7 +219,57 @@ function showLocationError(message) {
 async function handleSubmit(e) {
     e.preventDefault();
 
-    // Validate
+    // Lấy và trim tất cả giá trị
+    const mssv = document.getElementById('mssv').value.trim();
+    const fullname = document.getElementById('fullname').value.trim();
+    const classSession = document.getElementById('class_session').value;
+    const reason = document.getElementById('reason').value.trim();
+
+    // Validate bắt buộc - không cho phép khoảng trắng
+    if (!mssv) {
+        showToast('Vui lòng nhập MSSV!', 'error');
+        document.getElementById('mssv').focus();
+        return;
+    }
+
+    if (!fullname) {
+        showToast('Vui lòng nhập Họ tên đầy đủ!', 'error');
+        document.getElementById('fullname').focus();
+        return;
+    }
+
+    if (!classSession) {
+        showToast('Vui lòng chọn Ca học!', 'error');
+        document.getElementById('class_session').focus();
+        return;
+    }
+
+    if (!reason) {
+        showToast('Vui lòng nhập Lý do xin đi trễ!', 'error');
+        document.getElementById('reason').focus();
+        return;
+    }
+
+    // Validate độ dài tối thiểu
+    if (mssv.length < 3) {
+        showToast('MSSV phải có ít nhất 3 ký tự!', 'error');
+        document.getElementById('mssv').focus();
+        return;
+    }
+
+    if (fullname.length < 2) {
+        showToast('Họ tên phải có ít nhất 2 ký tự!', 'error');
+        document.getElementById('fullname').focus();
+        return;
+    }
+
+    if (reason.length < 5) {
+        showToast('Lý do phải có ít nhất 5 ký tự!', 'error');
+        document.getElementById('reason').focus();
+        return;
+    }
+
+    // Validate ảnh và vị trí
     if (!photoBlob) {
         showToast('Vui lòng chụp ảnh selfie! Hãy nhấn nút "📸 Chụp ảnh" để ghi nhận hình ảnh', 'error');
         return;
@@ -177,12 +280,12 @@ async function handleSubmit(e) {
         return;
     }
 
-    // Prepare form data
+    // Prepare form data với giá trị đã trim
     const formData = new FormData();
-    formData.append('mssv', document.getElementById('mssv').value);
-    formData.append('fullname', document.getElementById('fullname').value);
-    formData.append('class_session', document.getElementById('class_session').value);
-    formData.append('reason', document.getElementById('reason').value);
+    formData.append('mssv', mssv);
+    formData.append('fullname', fullname);
+    formData.append('class_session', classSession);
+    formData.append('reason', reason);
     formData.append('photo', photoBlob, 'selfie.jpg');
     formData.append('latitude', latitude);
     formData.append('longitude', longitude);
@@ -201,7 +304,11 @@ async function handleSubmit(e) {
         const result = await response.json();
 
         if (result.success) {
-            showToast('Gửi yêu cầu thành công! 🎉', 'success');
+            // Hiển thị thông báo với số lần xin trong tháng
+            const monthlyMsg = result.monthlyCount
+                ? ` (Lần thứ ${result.monthlyCount} trong ${result.monthName})`
+                : '';
+            showToast(`Gửi yêu cầu thành công! 🎉${monthlyMsg}`, 'success');
 
             // Reset form
             form.reset();

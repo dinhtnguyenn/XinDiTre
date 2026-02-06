@@ -215,12 +215,49 @@ app.post('/api/admin/login', (req, res) => {
 });
 
 // ============================================
+// API: Lookup sinh viên theo MSSV (PUBLIC)
+// ============================================
+app.get('/api/lookup-student/:mssv', async (req, res) => {
+    try {
+        const { mssv } = req.params;
+
+        if (!mssv || mssv.trim().length < 3) {
+            return res.json({ success: false, found: false });
+        }
+
+        const allRequests = await getRequests();
+        const studentRequest = allRequests.find(r => r.mssv.toLowerCase() === mssv.toLowerCase().trim());
+
+        if (studentRequest) {
+            res.json({
+                success: true,
+                found: true,
+                fullname: studentRequest.fullname
+            });
+        } else {
+            res.json({ success: true, found: false });
+        }
+    } catch (error) {
+        console.error('Lỗi lookup MSSV:', error);
+        res.json({ success: false, found: false });
+    }
+});
+
+// ============================================
 // API: Sinh viên gửi yêu cầu (PUBLIC)
 // ============================================
 app.post('/api/late-requests', upload.single('photo'), async (req, res) => {
     try {
-        const { mssv, fullname, class_session, reason, latitude, longitude, address } = req.body;
+        let { mssv, fullname, class_session, reason, latitude, longitude, address } = req.body;
 
+        // Trim tất cả input để chống bypass bằng khoảng trắng
+        mssv = (mssv || '').trim();
+        fullname = (fullname || '').trim();
+        class_session = (class_session || '').trim();
+        reason = (reason || '').trim();
+        address = (address || '').trim();
+
+        // Validate bắt buộc
         if (!mssv || !fullname || !class_session || !reason) {
             return res.status(400).json({
                 success: false,
@@ -228,12 +265,48 @@ app.post('/api/late-requests', upload.single('photo'), async (req, res) => {
             });
         }
 
-        let photo_url = null;
-        if (req.file) {
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-            const fileName = `selfie-${uniqueSuffix}.jpg`;
-            photo_url = await uploadPhoto(req.file.buffer, fileName);
+        // Validate độ dài tối thiểu
+        if (mssv.length < 3) {
+            return res.status(400).json({
+                success: false,
+                message: 'MSSV phải có ít nhất 3 ký tự!'
+            });
         }
+
+        if (fullname.length < 2) {
+            return res.status(400).json({
+                success: false,
+                message: 'Họ tên phải có ít nhất 2 ký tự!'
+            });
+        }
+
+        if (reason.length < 5) {
+            return res.status(400).json({
+                success: false,
+                message: 'Lý do phải có ít nhất 5 ký tự!'
+            });
+        }
+
+        // Validate ca học hợp lệ
+        if (!CLASS_SCHEDULES[class_session]) {
+            return res.status(400).json({
+                success: false,
+                message: 'Ca học không hợp lệ!'
+            });
+        }
+
+        // Validate ảnh
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng chụp ảnh selfie!'
+            });
+        }
+
+        let photo_url = null;
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const fileName = `selfie-${uniqueSuffix}.jpg`;
+        photo_url = await uploadPhoto(req.file.buffer, fileName);
 
         const result = await createRequest({
             mssv,
@@ -249,10 +322,24 @@ app.post('/api/late-requests', upload.single('photo'), async (req, res) => {
         // Gửi thông báo Telegram
         sendTelegramNotification({ mssv, fullname, class_session, reason, address });
 
+        // Đếm số lần xin trong tháng của sinh viên
+        const allRequests = await getRequests();
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        const monthlyCount = allRequests.filter(r => {
+            if (r.mssv !== mssv) return false;
+            const reqDate = new Date(r.created_at);
+            return reqDate.getMonth() === currentMonth && reqDate.getFullYear() === currentYear;
+        }).length;
+
         res.json({
             success: true,
             message: 'Gửi yêu cầu xin đi trễ thành công!',
-            id: result.id
+            id: result.id,
+            monthlyCount: monthlyCount,
+            monthName: now.toLocaleString('vi-VN', { month: 'long', year: 'numeric' })
         });
 
     } catch (error) {
@@ -416,7 +503,75 @@ app.get('/api/statistics', requireAdminAuth, async (req, res) => {
             thisWeek: data.filter(req => {
                 const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
                 return new Date(req.created_at) >= weekAgo;
-            }).length
+            }).length,
+            thisMonth: data.filter(req => {
+                const now = new Date();
+                const reqDate = new Date(req.created_at);
+                return reqDate.getMonth() === now.getMonth() && reqDate.getFullYear() === now.getFullYear();
+            }).length,
+            // Top 10 sinh viên xin nhiều nhất (tháng này)
+            topStudents: (() => {
+                const now = new Date();
+                const monthlyData = data.filter(req => {
+                    const reqDate = new Date(req.created_at);
+                    return reqDate.getMonth() === now.getMonth() && reqDate.getFullYear() === now.getFullYear();
+                });
+
+                const studentCounts = {};
+                monthlyData.forEach(req => {
+                    const key = req.mssv;
+                    if (!studentCounts[key]) {
+                        studentCounts[key] = { mssv: req.mssv, fullname: req.fullname, count: 0 };
+                    }
+                    studentCounts[key].count++;
+                });
+
+                return Object.values(studentCounts)
+                    .sort((a, b) => b.count - a.count)
+                    .slice(0, 10);
+            })(),
+            // Thống kê theo tuần (4 tuần gần nhất)
+            weekly: (() => {
+                const weeklyStats = [];
+                for (let i = 3; i >= 0; i--) {
+                    const weekStart = new Date();
+                    weekStart.setDate(weekStart.getDate() - (i + 1) * 7);
+                    const weekEnd = new Date();
+                    weekEnd.setDate(weekEnd.getDate() - i * 7);
+
+                    const count = data.filter(req => {
+                        const reqDate = new Date(req.created_at);
+                        return reqDate >= weekStart && reqDate < weekEnd;
+                    }).length;
+
+                    weeklyStats.push({
+                        label: `Tuần ${4 - i}`,
+                        count: count
+                    });
+                }
+                return weeklyStats;
+            })(),
+            // Thống kê theo tháng (6 tháng gần nhất)
+            monthly: (() => {
+                const monthlyStats = [];
+                for (let i = 5; i >= 0; i--) {
+                    const date = new Date();
+                    date.setMonth(date.getMonth() - i);
+                    const month = date.getMonth();
+                    const year = date.getFullYear();
+
+                    const count = data.filter(req => {
+                        const reqDate = new Date(req.created_at);
+                        return reqDate.getMonth() === month && reqDate.getFullYear() === year;
+                    }).length;
+
+                    monthlyStats.push({
+                        label: `${date.getMonth() + 1}/${date.getFullYear()}`,
+                        count: count
+                    });
+                }
+                return monthlyStats;
+            })()
         });
     } catch (error) {
         console.error('Lỗi khi lấy thống kê:', error);

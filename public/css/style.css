@@ -973,3 +973,69 @@ tbody tr:last-child td {
     margin-top: 4px;
     opacity: 0.8;
 }
+
+/* ============================================
+   Top Students List
+   ============================================ */
+.top-students-list {
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.top-students-table {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.top-student-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-radius: var(--border-radius-sm);
+    gap: 12px;
+    transition: var(--transition);
+}
+
+.top-student-row:hover {
+    background: #f1f5f9;
+}
+
+.top-student-row.first {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.top-student-row.second {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+}
+
+.top-student-row.third {
+    background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+}
+
+.top-student-row .rank {
+    font-size: 1.25rem;
+    min-width: 30px;
+    text-align: center;
+}
+
+.top-student-row .student-name {
+    flex: 1;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.top-student-row .student-mssv {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.top-student-row .count {
+    font-weight: 700;
+    color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+}
