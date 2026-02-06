@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Database
+database.sqlite
+
+# Uploads
+uploads/
+
+# Environment
+.env
+.env.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

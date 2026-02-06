@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xin Đi Trễ - Sinh Viên</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🎓</span>
+                <h1>Xin Đi Trễ</h1>
+            </div>
+            <p class="subtitle">Hệ thống xin phép đi trễ dành cho sinh viên</p>
+        </header>
+
+        <main class="main-content">
+            <form id="lateRequestForm" class="form-card">
+                <!-- Thông tin sinh viên -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <span class="section-icon">📝</span>
+                        Thông tin sinh viên
+                    </h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="mssv">Mã số sinh viên</label>
+                            <input type="text" id="mssv" name="mssv" placeholder="VD: 20110001" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="fullname">Họ và tên</label>
+                            <input type="text" id="fullname" name="fullname" placeholder="VD: Nguyễn Văn A" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="class_session">Ca học</label>
+                        <select id="class_session" name="class_session" required>
+                            <option value="">-- Chọn ca học --</option>
+                            <option value="Ca 1 (7:00 - 9:30)">Ca 1 (7:00 - 9:30)</option>
+                            <option value="Ca 2 (9:30 - 12:00)">Ca 2 (9:30 - 12:00)</option>
+                            <option value="Ca 3 (13:00 - 15:30)">Ca 3 (13:00 - 15:30)</option>
+                            <option value="Ca 4 (15:30 - 18:00)">Ca 4 (15:30 - 18:00)</option>
+                            <option value="Ca 5 (18:00 - 20:30)">Ca 5 (18:00 - 20:30)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reason">Lý do đi trễ</label>
+                        <textarea id="reason" name="reason" rows="3" placeholder="VD: Kẹt xe trên đường..." required></textarea>
+                    </div>
+                </div>
+
+                <!-- Camera & GPS -->
+                <div class="form-section">
+                    <h2 class="section-title">
+                        <span class="section-icon">📸</span>
+                        Ảnh xác nhận & Vị trí
+                    </h2>
+
+                    <div class="camera-section">
+                        <div class="camera-container" id="cameraContainer">
+                            <video id="video" autoplay playsinline></video>
+                            <canvas id="canvas" style="display: none;"></canvas>
+                            <img id="photoPreview" class="photo-preview" style="display: none;">
+                            <div class="camera-overlay" id="cameraOverlay">
+                                <span class="camera-icon">📷</span>
+                                <p>Nhấn để bật camera</p>
+                            </div>
+                        </div>
+                        
+                        <div class="camera-controls">
+                            <button type="button" id="startCameraBtn" class="btn btn-secondary">
+                                <span>📷</span> Bật Camera
+                            </button>
+                            <button type="button" id="captureBtn" class="btn btn-primary" style="display: none;">
+                                <span>📸</span> Chụp ảnh
+                            </button>
+                            <button type="button" id="retakeBtn" class="btn btn-secondary" style="display: none;">
+                                <span>🔄</span> Chụp lại
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="location-section">
+                        <div class="location-status" id="locationStatus">
+                            <span class="location-icon">📍</span>
+                            <span class="location-text">Đang lấy vị trí của bạn...</span>
+                        </div>
+                        <div class="location-details" id="locationDetails" style="display: none;">
+                            <p id="addressText"></p>
+                            <small id="coordsText"></small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="form-actions">
+                    <button type="submit" id="submitBtn" class="btn btn-submit">
+                        <span>🚀</span> Gửi yêu cầu
+                    </button>
+                </div>
+            </form>
+        </main>
+
+        <footer class="footer">
+            <p>© 2026 - Hệ thống Xin Đi Trễ | <a href="admin.html">Trang Admin</a></p>
+        </footer>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
