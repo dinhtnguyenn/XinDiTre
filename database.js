@@ -63,17 +63,23 @@ async function getRequests() {
 
 // Delete a late request
 async function deleteRequest(id) {
-    // First get the photo URL to delete from storage
+    // First get the photo URLs to delete from storage
     const { data: request } = await supabase
         .from('late_requests')
-        .select('photo_url')
+        .select('photo_url, evidence_url')
         .eq('id', id)
         .single();
 
-    // Delete photo from storage if exists
+    // Delete selfie photo from storage if exists
     if (request && request.photo_url) {
         const fileName = request.photo_url.split('/').pop();
         await supabase.storage.from('selfies').remove([fileName]);
+    }
+
+    // Delete evidence photo from storage if exists
+    if (request && request.evidence_url) {
+        const evidenceFileName = request.evidence_url.split('/').pop();
+        await supabase.storage.from('selfies').remove([evidenceFileName]);
     }
 
     // Delete the record
