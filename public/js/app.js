@@ -168,7 +168,7 @@ async function handleSubmit(e) {
 
     // Validate
     if (!photoBlob) {
-        showToast('Vui lòng chụp ảnh selfie!', 'error');
+        showToast('Vui lòng chụp ảnh selfie! Hãy nhấn nút "📸 Chụp ảnh" để ghi nhận hình ảnh', 'error');
         return;
     }
 
