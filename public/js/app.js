@@ -55,6 +55,8 @@ async function lookupStudent(mssv) {
     }
 
     try {
+        // Tạm thời bỏ chức năng tự động lấy họ tên theo yêu cầu
+        /*
         const response = await fetch(`/api/lookup-student/${encodeURIComponent(mssv)}`);
         const result = await response.json();
 
@@ -73,6 +75,10 @@ async function lookupStudent(mssv) {
                 isAutoFilled = false;
             }
         }
+        */
+
+        // Save MSSV manually since we skipped validation
+        localStorage.setItem('saved_mssv', mssv);
 
         // Fetch monthly count
         fetchMonthlyCount(mssv);
