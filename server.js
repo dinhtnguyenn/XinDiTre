@@ -40,27 +40,47 @@ function checkDeadlineStatus(classSession, submittedAt) {
         return { isWithinDeadline: null, message: 'Không xác định' };
     }
 
+    // Chuyển thời gian submit về Date object
     const submitted = new Date(submittedAt);
 
-    // Thời gian bắt đầu ca (cùng ngày với ngày submit)
-    const classStart = new Date(submitted);
-    classStart.setHours(schedule.hour, schedule.minute, 0, 0);
+    // Lấy giờ submit theo múi giờ Việt Nam (UTC+7)
+    // Sử dụng toLocaleString để lấy thời gian đúng timezone
+    const vnTimeStr = submitted.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const vnTime = new Date(vnTimeStr);
+    const submittedHour = vnTime.getHours();
+    const submittedMinute = vnTime.getMinutes();
+    const submittedSecond = vnTime.getSeconds();
+
+    // Thời gian bắt đầu ca (hour:minute:00)
+    const classStartHour = schedule.hour;
+    const classStartMinute = schedule.minute;
 
     // Deadline = bắt đầu ca + 14 phút 30 giây
-    const deadline = new Date(classStart);
-    deadline.setMinutes(deadline.getMinutes() + DEADLINE_MINUTES);
-    deadline.setSeconds(deadline.getSeconds() + DEADLINE_SECONDS);
+    let deadlineHour = classStartHour;
+    let deadlineMinute = classStartMinute + DEADLINE_MINUTES;
+    let deadlineSecond = DEADLINE_SECONDS;
+
+    // Xử lý nếu phút vượt quá 60
+    if (deadlineMinute >= 60) {
+        deadlineHour += 1;
+        deadlineMinute -= 60;
+    }
+
+    // Chuyển tất cả về giây để so sánh dễ hơn
+    const submittedTotalSeconds = submittedHour * 3600 + submittedMinute * 60 + submittedSecond;
+    const classStartTotalSeconds = classStartHour * 3600 + classStartMinute * 60;
+    const deadlineTotalSeconds = deadlineHour * 3600 + deadlineMinute * 60 + deadlineSecond;
 
     // Trong hạn nếu gửi trước hoặc đúng deadline
-    const isWithinDeadline = submitted <= deadline;
+    const isWithinDeadline = submittedTotalSeconds <= deadlineTotalSeconds;
 
-    // Tính khoảng cách thời gian so với bắt đầu ca
-    const diffFromStart = submitted - classStart;
-    const diffMinutes = Math.floor(Math.abs(diffFromStart) / 60000);
-    const diffSeconds = Math.floor((Math.abs(diffFromStart) % 60000) / 1000);
+    // Tính khoảng cách thời gian
+    const diffFromStart = submittedTotalSeconds - classStartTotalSeconds;
+    const diffMinutes = Math.floor(Math.abs(diffFromStart) / 60);
+    const diffSeconds = Math.abs(diffFromStart) % 60;
 
     let message;
-    if (submitted < classStart) {
+    if (submittedTotalSeconds < classStartTotalSeconds) {
         // Gửi trước khi bắt đầu ca
         message = `✅ Trong hạn (gửi trước ${diffMinutes}p${diffSeconds}s khi bắt đầu ca)`;
     } else if (isWithinDeadline) {
@@ -68,17 +88,17 @@ function checkDeadlineStatus(classSession, submittedAt) {
         message = `✅ Trong hạn (gửi sau ${diffMinutes}p${diffSeconds}s khi bắt đầu ca)`;
     } else {
         // Gửi quá hạn
-        const lateMs = submitted - deadline;
-        const lateMinutes = Math.floor(lateMs / 60000);
-        const lateSeconds = Math.floor((lateMs % 60000) / 1000);
-        message = `❌ Ngoài hạn (trễ ${lateMinutes}p${lateSeconds}s so với hạn 14p30s)`;
+        const lateSeconds = submittedTotalSeconds - deadlineTotalSeconds;
+        const lateMinutes = Math.floor(lateSeconds / 60);
+        const lateSecs = lateSeconds % 60;
+        message = `❌ Ngoài hạn (trễ ${lateMinutes}p${lateSecs}s so với hạn 14p30s)`;
     }
 
     return {
         isWithinDeadline,
         message,
-        deadline: deadline.toISOString(),
-        classStart: classStart.toISOString()
+        submittedTime: `${submittedHour}:${submittedMinute}:${submittedSecond}`,
+        deadline: `${deadlineHour}:${deadlineMinute}:${deadlineSecond}`
     };
 }
 
