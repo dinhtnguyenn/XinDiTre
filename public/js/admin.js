@@ -108,6 +108,7 @@ const nextPageBtn = document.getElementById('nextPage');
 const paginationPages = document.getElementById('paginationPages');
 const paginationTotal = document.getElementById('paginationTotal');
 let currentPage = 1;
+
 let pageSize = 20;
 
 // ============================================
@@ -412,6 +413,24 @@ function updateStats() {
     todayRequests.textContent = todayCount;
 }
 
+// Tọa độ trường (FPT Polytechnic TP.HCM - CS3)
+const SCHOOL_COORDS = {
+    latitude: 10.853784,
+    longitude: 106.626292
+};
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of the earth in km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return (R * c).toFixed(2);
+}
+
 // ============================================
 // View Detail Modal
 // ============================================
@@ -450,8 +469,26 @@ function viewDetail(id) {
         noPhotoText.style.display = 'block';
     }
 
-    document.getElementById('detailAddress').textContent =
-        currentRequest.address || 'Không có thông tin vị trí';
+    document.getElementById('detailAddress').innerHTML =
+        (currentRequest.address || 'Không có thông tin vị trí');
+
+    if (currentRequest.latitude && currentRequest.longitude) {
+        const distance = calculateDistance(currentRequest.latitude, currentRequest.longitude, SCHOOL_COORDS.latitude, SCHOOL_COORDS.longitude);
+
+        let color = '#10b981'; // Green
+        let icon = '🟢';
+
+        if (distance > 20) {
+            color = '#ef4444'; // Red
+            icon = '🔴';
+        } else if (distance > 5) {
+            color = '#f59e0b'; // Orange
+            icon = '🟠';
+        }
+
+        const distanceHtml = `<br><span style="color: ${color}; font-weight: 600; margin-top: 4px; display: inline-block;">${icon} Cách trường ${distance}km</span>`;
+        document.getElementById('detailAddress').innerHTML += distanceHtml;
+    }
 
     modal.classList.add('show');
     setTimeout(() => initMap(), 100);
@@ -889,6 +926,65 @@ function exportToExcel() {
         console.error('Lỗi export Excel:', error);
         showToast('Không thể xuất file Excel!', 'error');
     }
+}
+
+// ============================================
+// Map Lightbox Functions
+// ============================================
+function openMapLightbox() {
+    if (!currentRequest || !currentRequest.latitude || !currentRequest.longitude) {
+        showToast('Không có dữ liệu vị trí để phóng to!', 'error');
+        return;
+    }
+
+    const lightbox = document.getElementById('mapLightbox');
+    lightbox.classList.add('show');
+    console.log('Opening Map Lightbox...'); // Debug
+
+    // Initialize or Update Map
+    // Wait for lightbox to be visible for correct sizing
+    setTimeout(() => {
+        if (!largeMapInstance) {
+            console.log('Initializing new large map instance');
+            largeMapInstance = L.map('largeMap').setView([currentRequest.latitude, currentRequest.longitude], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(largeMapInstance);
+        } else {
+            console.log('Updating existing large map instance');
+            largeMapInstance.setView([currentRequest.latitude, currentRequest.longitude], 16);
+        }
+
+        // Always force resize calculation after visibility change
+        largeMapInstance.invalidateSize();
+
+        // Clear existing layers (except tile layer) to remove old markers
+        largeMapInstance.eachLayer((layer) => {
+            if (layer instanceof L.Marker) {
+                largeMapInstance.removeLayer(layer);
+            }
+        });
+
+        // Add User Marker
+        L.marker([currentRequest.latitude, currentRequest.longitude])
+            .addTo(largeMapInstance)
+            .bindPopup(`<b>${currentRequest.fullname}</b><br>${currentRequest.address || 'Vị trí sinh viên'}`)
+            .openPopup();
+
+        // Add School Marker
+        if (typeof SCHOOL_COORDS !== 'undefined') {
+            L.marker([SCHOOL_COORDS.latitude, SCHOOL_COORDS.longitude])
+                .addTo(largeMapInstance)
+                .bindPopup('<b>FPT Polytechnic CS3</b>')
+                .openPopup();
+        }
+
+    }, 300); // 300ms timeout
+}
+
+function closeMapLightbox() {
+    const lightbox = document.getElementById('mapLightbox');
+    lightbox.classList.remove('show');
 }
 
 // ============================================

@@ -27,6 +27,80 @@
     --transition: all 0.3s ease;
 }
 
+/* Dark Mode Variables */
+body.dark-mode {
+    --primary: #818cf8;
+    --primary-dark: #6366f1;
+    --primary-light: #4f46e5;
+
+    --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    --card-bg: rgba(30, 41, 59, 0.95);
+    --glass-bg: rgba(30, 41, 59, 0.4);
+    --glass-border: rgba(148, 163, 184, 0.1);
+
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-light: #94a3b8;
+
+    --shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode input,
+body.dark-mode select,
+body.dark-mode textarea {
+    background-color: #0f172a;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+body.dark-mode .table-container {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+}
+
+body.dark-mode table th {
+    background-color: #0f172a;
+    color: #f1f5f9;
+}
+
+body.dark-mode table td {
+    border-bottom-color: #334155;
+    color: #cbd5e1;
+}
+
+body.dark-mode tr:hover {
+    background-color: rgba(99, 102, 241, 0.1);
+}
+
+body.dark-mode .monthly-count-box {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+body.dark-mode .loading-overlay {
+    background: rgba(15, 23, 42, 0.9);
+}
+
+body.dark-mode .pagination-btn,
+body.dark-mode .pagination-page,
+body.dark-mode .pagination-info select {
+    background: #0f172a;
+    border-color: #334155;
+    color: #f1f5f9;
+}
+
+body.dark-mode .pagination-page:hover,
+body.dark-mode .pagination-btn:hover:not(:disabled) {
+    background: #1e293b;
+}
+
+body.dark-mode .pagination-page.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -64,6 +138,28 @@ body {
     text-align: center;
     padding: 32px 0;
     color: white;
+}
+
+.theme-toggle {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    cursor: pointer;
+    font-size: 1.25rem;
+    padding: 8px;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    margin-left: 12px;
+}
+
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(15deg);
 }
 
 .logo {

@@ -10,6 +10,7 @@ let isAutoFilled = false;
 let miniMap = null;
 let countdownInterval = null;
 let monthlyCount = 0;
+let faceModel = null; // AI Face Model
 
 // Class schedules (phải khớp với server)
 const CLASS_SCHEDULES = {
@@ -19,6 +20,12 @@ const CLASS_SCHEDULES = {
     'Ca 4 (14:10 - 16:10)': { hour: 14, minute: 10 },
     'Ca 5 (16:20 - 18:20)': { hour: 16, minute: 20 },
     'Ca 6 (18:30 - 20:30)': { hour: 18, minute: 30 }
+};
+
+// Tọa độ trường (FPT Polytechnic TP.HCM - CS3)
+const SCHOOL_COORDS = {
+    latitude: 10.853784,
+    longitude: 106.626292
 };
 
 // DOM Elements
@@ -237,6 +244,21 @@ function retakePhoto() {
 // ============================================
 // Location Functions
 // ============================================
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Radius of the earth in km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return (R * c).toFixed(2); // Distance in km
+}
+
+function deg2rad(deg) {
+    return deg * (Math.PI / 180);
+}
 function getLocation() {
     if (!navigator.geolocation) {
         showLocationError('Trình duyệt không hỗ trợ GPS');
@@ -269,6 +291,25 @@ function getLocation() {
             locationDetails.style.display = 'block';
             addressText.textContent = address;
             coordsText.textContent = `Tọa độ: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+
+            // Tính và hiển thị khoảng cách
+            const distance = calculateDistance(latitude, longitude, SCHOOL_COORDS.latitude, SCHOOL_COORDS.longitude);
+            const distanceInfo = document.getElementById('distanceInfo');
+            const distanceValue = document.getElementById('distanceValue');
+
+            if (distanceInfo && distanceValue) {
+                distanceInfo.style.display = 'block';
+                distanceValue.textContent = distance;
+
+                // Color coding distance
+                if (distance > 20) {
+                    distanceInfo.style.color = 'var(--danger)'; // > 20km (Red)
+                } else if (distance > 5) {
+                    distanceInfo.style.color = 'var(--warning)'; // > 5km (Orange)
+                } else {
+                    distanceInfo.style.color = 'var(--success)'; // < 5km (Green)
+                }
+            }
 
             // Show mini map
             showMiniMap(latitude, longitude);
@@ -444,7 +485,7 @@ function showToast(message, type = 'info') {
 // ============================================
 startCameraBtn.addEventListener('click', startCamera);
 cameraOverlay.addEventListener('click', startCamera);
-captureBtn.addEventListener('click', capturePhoto);
+captureBtn.addEventListener('click', detectFaceAndCapture);
 retakeBtn.addEventListener('click', retakePhoto);
 form.addEventListener('submit', handleSubmit);
 
@@ -669,7 +710,11 @@ function suggestClassSession() {
     if (suggestedKey) {
         select.value = suggestedKey;
         label.textContent = '(Gợi ý)';
+        label.style.display = 'inline';
         updateCountdown(suggestedKey);
+    } else {
+        label.style.display = 'none';
+        label.textContent = '';
     }
 }
 
@@ -691,4 +736,55 @@ document.addEventListener('DOMContentLoaded', () => {
             lookupStudent(savedMssv);
         }, 500);
     }
+
+    // Load Face Model
+    loadFaceModel();
 });
+
+// ============================================
+// AI Face Detection
+// ============================================
+async function loadFaceModel() {
+    try {
+        console.log('⏳ Đang tải Face Model...');
+        faceModel = await blazeface.load();
+        console.log('✅ Face Model đã tải xong!');
+    } catch (error) {
+        console.error('Lỗi tải Face Model:', error);
+        showToast('Không thể tải AI nhận diện khuôn mặt!', 'error');
+    }
+}
+
+async function detectFaceAndCapture() {
+    if (!faceModel) {
+        // Fallback nếu model chưa tải xong
+        capturePhoto();
+        return;
+    }
+
+    if (!stream) return;
+
+    // Show loading state on button
+    const originalBtnContent = captureBtn.innerHTML;
+    captureBtn.innerHTML = 'Scan... 🤖';
+    captureBtn.disabled = true;
+
+    try {
+        const predictions = await faceModel.estimateFaces(video, false);
+
+        if (predictions.length > 0) {
+            // Có khuôn mặt -> Chụp
+            capturePhoto();
+            showToast('✅ Đã xác thực khuôn mặt!', 'success');
+        } else {
+            // Không có khuôn mặt
+            showToast('⚠️ Không tìm thấy khuôn mặt! Vui lòng chụp rõ mặt.', 'error');
+        }
+    } catch (error) {
+        console.error('Lỗi detect face:', error);
+        capturePhoto(); // Fallback
+    } finally {
+        captureBtn.innerHTML = originalBtnContent;
+        captureBtn.disabled = false;
+    }
+}
