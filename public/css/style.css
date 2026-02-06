@@ -9,21 +9,21 @@
     --success: #10b981;
     --danger: #ef4444;
     --warning: #f59e0b;
-    
+
     --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     --card-bg: rgba(255, 255, 255, 0.95);
     --glass-bg: rgba(255, 255, 255, 0.25);
     --glass-border: rgba(255, 255, 255, 0.3);
-    
+
     --text-primary: #1e293b;
     --text-secondary: #64748b;
     --text-light: #94a3b8;
-    
+
     --border-radius: 16px;
     --border-radius-sm: 8px;
     --shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
     --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.1);
-    
+
     --transition: all 0.3s ease;
 }
 
@@ -80,8 +80,15 @@ body {
 }
 
 @keyframes bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
 }
 
 .header h1 {
@@ -287,8 +294,15 @@ body {
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
 }
 
 .location-status.success .location-icon {
@@ -522,7 +536,8 @@ table {
     border-collapse: collapse;
 }
 
-th, td {
+th,
+td {
     padding: 14px 16px;
     text-align: left;
 }
@@ -568,7 +583,9 @@ tbody tr:last-child td {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .empty-row {
@@ -715,7 +732,7 @@ tbody tr:last-child td {
     .media-section {
         grid-template-columns: 1fr;
     }
-    
+
     .detail-grid {
         grid-template-columns: 1fr;
     }
@@ -753,24 +770,141 @@ tbody tr:last-child td {
 /* ============================================
    Responsive
    ============================================ */
+/* ============================================
+   Charts Section
+   ============================================ */
+.charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 768px) {
+    .charts-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chart-card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    padding: 20px;
+}
+
+.chart-card h3 {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+}
+
+.chart-card canvas {
+    max-height: 200px;
+}
+
+/* ============================================
+   Filter & Search Row
+   ============================================ */
+.filter-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    flex: 1;
+    min-width: 200px;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 0.9375rem;
+    font-family: inherit;
+    border: 2px solid #e2e8f0;
+    border-radius: var(--border-radius-sm);
+    background: white;
+    color: var(--text-primary);
+    transition: var(--transition);
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.filter-box select {
+    padding: 10px 16px;
+    font-size: 0.9375rem;
+    font-family: inherit;
+    border: 2px solid #e2e8f0;
+    border-radius: var(--border-radius-sm);
+    background: white;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.filter-box select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* ============================================
+   Student Info Badge
+   ============================================ */
+.student-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.student-info strong {
+    color: var(--text-primary);
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
 @media (max-width: 480px) {
     .container {
         padding: 16px;
     }
-    
+
     .header h1 {
         font-size: 1.5rem;
     }
-    
+
     .form-section {
         padding: 20px;
     }
-    
+
     .camera-controls {
         flex-direction: column;
     }
-    
+
     .camera-controls .btn {
+        width: 100%;
+    }
+
+    .filter-row {
+        flex-direction: column;
+    }
+
+    .filter-row .btn {
+        width: 100%;
+    }
+
+    .modal-actions {
+        flex-direction: column;
+    }
+
+    .modal-actions .btn {
         width: 100%;
     }
 }

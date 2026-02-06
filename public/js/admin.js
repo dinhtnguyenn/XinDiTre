@@ -3,17 +3,16 @@
 // ============================================
 let authToken = null;
 
-// Check if already logged in
 function checkAuth() {
     const savedToken = localStorage.getItem('adminToken');
     if (savedToken) {
         authToken = savedToken;
         showAdminContent();
         fetchRequests();
+        fetchStatistics();
     }
 }
 
-// Login
 async function handleLogin(e) {
     e.preventDefault();
 
@@ -30,12 +29,11 @@ async function handleLogin(e) {
         const result = await response.json();
 
         if (result.success) {
-            // Save token (base64 encoded password)
             authToken = btoa(password);
             localStorage.setItem('adminToken', authToken);
-
             showAdminContent();
             fetchRequests();
+            fetchStatistics();
         } else {
             errorEl.textContent = result.message;
             errorEl.style.display = 'block';
@@ -46,7 +44,6 @@ async function handleLogin(e) {
     }
 }
 
-// Logout
 function logout() {
     authToken = null;
     localStorage.removeItem('adminToken');
@@ -55,17 +52,13 @@ function logout() {
     document.getElementById('password').value = '';
 }
 
-// Show admin content
 function showAdminContent() {
     document.getElementById('loginModal').classList.remove('show');
     document.getElementById('adminContent').style.display = 'flex';
 }
 
-// Get auth headers
 function getAuthHeaders() {
-    return {
-        'Authorization': `Basic ${authToken}`
-    };
+    return { 'Authorization': `Basic ${authToken}` };
 }
 
 // ============================================
@@ -74,22 +67,126 @@ function getAuthHeaders() {
 let requests = [];
 let currentRequest = null;
 let map = null;
-let marker = null;
+let dailyChart = null;
+let classChart = null;
 
 // DOM Elements
 const requestsBody = document.getElementById('requestsBody');
 const totalRequests = document.getElementById('totalRequests');
 const todayRequests = document.getElementById('todayRequests');
+const weekRequests = document.getElementById('weekRequests');
 const refreshBtn = document.getElementById('refreshBtn');
+const searchInput = document.getElementById('searchInput');
+const filterSelect = document.getElementById('filterSelect');
+const resultCount = document.getElementById('resultCount');
 
 const modal = document.getElementById('detailModal');
 const closeModal = document.getElementById('closeModal');
 const deleteBtn = document.getElementById('deleteBtn');
+const viewHistoryBtn = document.getElementById('viewHistoryBtn');
+
+const historyModal = document.getElementById('historyModal');
+const closeHistoryModal = document.getElementById('closeHistoryModal');
 
 const toast = document.getElementById('toast');
 
 // ============================================
-// Fetch Data
+// Fetch Statistics & Charts
+// ============================================
+async function fetchStatistics() {
+    try {
+        const response = await fetch('/api/statistics', {
+            headers: getAuthHeaders()
+        });
+
+        if (response.status === 401) return;
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Update stats
+            totalRequests.textContent = result.total;
+            weekRequests.textContent = result.thisWeek;
+
+            // Daily chart
+            renderDailyChart(result.daily);
+
+            // Class chart
+            renderClassChart(result.byClass);
+        }
+    } catch (error) {
+        console.error('Lỗi khi lấy thống kê:', error);
+    }
+}
+
+function renderDailyChart(data) {
+    const ctx = document.getElementById('dailyChart').getContext('2d');
+
+    if (dailyChart) dailyChart.destroy();
+
+    dailyChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.labels,
+            datasets: [{
+                label: 'Số yêu cầu',
+                data: data.values,
+                borderColor: '#6366f1',
+                backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+}
+
+function renderClassChart(data) {
+    const ctx = document.getElementById('classChart').getContext('2d');
+
+    if (classChart) classChart.destroy();
+
+    const colors = [
+        '#6366f1', '#8b5cf6', '#a855f7',
+        '#d946ef', '#ec4899', '#f43f5e'
+    ];
+
+    classChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: data.labels,
+            datasets: [{
+                data: data.values,
+                backgroundColor: colors.slice(0, data.labels.length)
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { boxWidth: 12 }
+                }
+            }
+        }
+    });
+}
+
+// ============================================
+// Fetch Data with Filter & Search
 // ============================================
 async function fetchRequests() {
     requestsBody.innerHTML = `
@@ -102,7 +199,16 @@ async function fetchRequests() {
     `;
 
     try {
-        const response = await fetch('/api/late-requests', {
+        const filter = filterSelect.value;
+        const search = searchInput.value.trim();
+
+        let url = '/api/late-requests';
+        const params = new URLSearchParams();
+        if (filter) params.append('filter', filter);
+        if (search) params.append('search', search);
+        if (params.toString()) url += '?' + params.toString();
+
+        const response = await fetch(url, {
             headers: getAuthHeaders()
         });
 
@@ -137,11 +243,13 @@ async function fetchRequests() {
 // Render Table
 // ============================================
 function renderTable() {
+    resultCount.textContent = `Hiển thị ${requests.length} yêu cầu`;
+
     if (requests.length === 0) {
         requestsBody.innerHTML = `
             <tr>
                 <td colspan="6" class="empty-row">
-                    📭 Chưa có yêu cầu xin đi trễ nào
+                    📭 Không tìm thấy yêu cầu nào
                 </td>
             </tr>
         `;
@@ -168,9 +276,6 @@ function renderTable() {
 // Statistics
 // ============================================
 function updateStats() {
-    totalRequests.textContent = requests.length;
-
-    // Count today's requests
     const today = new Date().toDateString();
     const todayCount = requests.filter(req => {
         const reqDate = new Date(req.created_at).toDateString();
@@ -187,14 +292,12 @@ function viewDetail(id) {
     currentRequest = requests.find(req => req.id === id);
     if (!currentRequest) return;
 
-    // Fill data
     document.getElementById('detailMssv').textContent = currentRequest.mssv;
     document.getElementById('detailFullname').textContent = currentRequest.fullname;
     document.getElementById('detailClassSession').textContent = currentRequest.class_session;
     document.getElementById('detailTime').textContent = formatDate(currentRequest.created_at);
     document.getElementById('detailReason').textContent = currentRequest.reason;
 
-    // Photo
     const photoEl = document.getElementById('detailPhoto');
     const noPhotoText = document.getElementById('noPhotoText');
 
@@ -207,17 +310,50 @@ function viewDetail(id) {
         noPhotoText.style.display = 'block';
     }
 
-    // Address
     document.getElementById('detailAddress').textContent =
         currentRequest.address || 'Không có thông tin vị trí';
 
-    // Show modal
     modal.classList.add('show');
 
-    // Initialize map after modal is visible
-    setTimeout(() => {
-        initMap();
-    }, 100);
+    setTimeout(() => initMap(), 100);
+}
+
+// ============================================
+// Student History
+// ============================================
+async function viewStudentHistory() {
+    if (!currentRequest) return;
+
+    const mssv = currentRequest.mssv;
+
+    try {
+        const response = await fetch(`/api/late-requests/student/${mssv}`, {
+            headers: getAuthHeaders()
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            document.getElementById('historyMssv').textContent = mssv;
+            document.getElementById('historyStudentName').textContent = currentRequest.fullname;
+            document.getElementById('historyTotal').textContent = result.total;
+
+            const historyBody = document.getElementById('historyBody');
+            historyBody.innerHTML = result.data.map((req, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${escapeHtml(req.class_session)}</td>
+                    <td>${escapeHtml(req.reason)}</td>
+                    <td>${formatDate(req.created_at)}</td>
+                </tr>
+            `).join('');
+
+            closeModalFn();
+            historyModal.classList.add('show');
+        }
+    } catch (error) {
+        showToast('Không thể tải lịch sử!', 'error');
+    }
 }
 
 // ============================================
@@ -231,21 +367,18 @@ function initMap() {
         return;
     }
 
-    // Destroy old map if exists
-    if (map) {
-        map.remove();
-    }
+    if (map) map.remove();
 
-    // Create new map
     map = L.map('detailMap').setView([currentRequest.latitude, currentRequest.longitude], 16);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
     }).addTo(map);
 
-    // Add marker
-    marker = L.marker([currentRequest.latitude, currentRequest.longitude]).addTo(map);
-    marker.bindPopup(`<b>${currentRequest.fullname}</b><br>${currentRequest.address || 'Vị trí sinh viên'}`).openPopup();
+    L.marker([currentRequest.latitude, currentRequest.longitude])
+        .addTo(map)
+        .bindPopup(`<b>${currentRequest.fullname}</b><br>${currentRequest.address || 'Vị trí sinh viên'}`)
+        .openPopup();
 }
 
 // ============================================
@@ -274,27 +407,26 @@ async function deleteRequest() {
             showToast('Đã xóa yêu cầu thành công!', 'success');
             closeModalFn();
             fetchRequests();
+            fetchStatistics();
         } else {
             showToast(result.message || 'Có lỗi xảy ra!', 'error');
         }
     } catch (error) {
-        console.error('Lỗi khi xóa yêu cầu:', error);
         showToast('Không thể kết nối đến server!', 'error');
     }
 }
 
 // ============================================
-// Close Modal
+// Close Modals
 // ============================================
 function closeModalFn() {
     modal.classList.remove('show');
     currentRequest = null;
+    if (map) { map.remove(); map = null; }
+}
 
-    // Destroy map
-    if (map) {
-        map.remove();
-        map = null;
-    }
+function closeHistoryModalFn() {
+    historyModal.classList.remove('show');
 }
 
 // ============================================
@@ -320,10 +452,14 @@ function escapeHtml(text) {
 function showToast(message, type = 'info') {
     toast.textContent = message;
     toast.className = 'toast show ' + type;
+    setTimeout(() => toast.classList.remove('show'), 3000);
+}
 
-    setTimeout(() => {
-        toast.classList.remove('show');
-    }, 3000);
+// Debounce search
+let searchTimeout;
+function handleSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(fetchRequests, 300);
 }
 
 // ============================================
@@ -334,27 +470,36 @@ document.getElementById('logoutBtn').addEventListener('click', (e) => {
     e.preventDefault();
     logout();
 });
-refreshBtn.addEventListener('click', fetchRequests);
+
+refreshBtn.addEventListener('click', () => {
+    fetchRequests();
+    fetchStatistics();
+});
+searchInput.addEventListener('input', handleSearch);
+filterSelect.addEventListener('change', fetchRequests);
+
 closeModal.addEventListener('click', closeModalFn);
 deleteBtn.addEventListener('click', deleteRequest);
+viewHistoryBtn.addEventListener('click', viewStudentHistory);
 
-// Close modal on outside click
+closeHistoryModal.addEventListener('click', closeHistoryModalFn);
+
 modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-        closeModalFn();
-    }
+    if (e.target === modal) closeModalFn();
 });
 
-// Close modal on Escape key
+historyModal.addEventListener('click', (e) => {
+    if (e.target === historyModal) closeHistoryModalFn();
+});
+
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal.classList.contains('show')) {
+    if (e.key === 'Escape') {
         closeModalFn();
+        closeHistoryModalFn();
     }
 });
 
 // ============================================
 // Initialize
 // ============================================
-document.addEventListener('DOMContentLoaded', () => {
-    checkAuth();
-});
+document.addEventListener('DOMContentLoaded', checkAuth);

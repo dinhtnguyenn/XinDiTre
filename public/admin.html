@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body class="admin-page">
@@ -64,15 +65,50 @@
                         <span class="stat-label">Hôm nay</span>
                     </div>
                 </div>
+                <div class="stat-card">
+                    <span class="stat-icon">📊</span>
+                    <div class="stat-info">
+                        <span class="stat-number" id="weekRequests">0</span>
+                        <span class="stat-label">Tuần này</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Biểu đồ thống kê -->
+            <div class="charts-row">
+                <div class="chart-card">
+                    <h3>📈 Số lượng yêu cầu theo ngày</h3>
+                    <canvas id="dailyChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3>📊 Phân bố theo ca học</h3>
+                    <canvas id="classChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Bộ lọc và tìm kiếm -->
+            <div class="filter-row">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Tìm theo MSSV hoặc tên...">
+                </div>
+                <div class="filter-box">
+                    <select id="filterSelect">
+                        <option value="">Tất cả</option>
+                        <option value="today">Hôm nay</option>
+                        <option value="week">7 ngày qua</option>
+                        <option value="month">Tháng này</option>
+                    </select>
+                </div>
+                <button id="refreshBtn" class="btn btn-secondary btn-sm">
+                    <span>🔄</span> Làm mới
+                </button>
             </div>
 
             <!-- Bảng danh sách -->
             <div class="table-card">
                 <div class="table-header">
                     <h2>Danh sách yêu cầu</h2>
-                    <button id="refreshBtn" class="btn btn-secondary btn-sm">
-                        <span>🔄</span> Làm mới
-                    </button>
+                    <span id="resultCount" style="color: #64748b; font-size: 0.875rem;"></span>
                 </div>
 
                 <div class="table-container">
@@ -101,7 +137,7 @@
         </main>
 
         <footer class="footer">
-            <p>© 2026 - Hệ thống Xin Đi Trễ</p>
+            <p>© 2026 - Hệ thống Xin Đi Trễ | 📲 Thông báo qua Telegram</p>
         </footer>
     </div>
 
@@ -151,9 +187,45 @@
             </div>
 
             <div class="modal-actions">
+                <button id="viewHistoryBtn" class="btn btn-secondary">
+                    <span>📜</span> Xem lịch sử SV này
+                </button>
                 <button id="deleteBtn" class="btn btn-danger">
                     <span>🗑️</span> Xóa yêu cầu
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal lịch sử sinh viên -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" id="closeHistoryModal">&times;</button>
+            <h2 class="modal-title">📜 Lịch sử xin đi trễ</h2>
+
+            <div class="modal-body">
+                <div class="student-info"
+                    style="margin-bottom: 20px; padding: 16px; background: #f1f5f9; border-radius: 8px;">
+                    <strong id="historyStudentName"></strong>
+                    <span style="color: #64748b;"> - MSSV: <span id="historyMssv"></span></span>
+                    <span style="float: right; color: #6366f1; font-weight: 600;">Tổng: <span id="historyTotal"></span>
+                        lần</span>
+                </div>
+
+                <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Ca học</th>
+                                <th>Lý do</th>
+                                <th>Thời gian</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyBody">
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
