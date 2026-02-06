@@ -493,6 +493,7 @@ async function viewStudentHistory() {
 function updateCountdown(classSession) {
     const countdownBox = document.getElementById('countdownBox');
     const countdownTimer = document.getElementById('countdownTimer');
+    const countdownLabel = countdownBox.querySelector('.countdown-label');
 
     if (!classSession || !CLASS_SCHEDULES[classSession]) {
         countdownBox.style.display = 'none';
@@ -513,17 +514,28 @@ function updateCountdown(classSession) {
         const diff = deadline - now;
 
         if (diff <= 0) {
-            countdownTimer.textContent = 'HẾT HẠN';
+            // Đã quá hạn - hiển thị quá bao lâu
+            const overMs = Math.abs(diff);
+            const overMinutes = Math.floor(overMs / 60000);
+            const overSeconds = Math.floor((overMs % 60000) / 1000);
+
+            countdownLabel.textContent = '⏰ Đã quá hạn:';
+            countdownTimer.textContent = `${overMinutes}p ${overSeconds}s`;
             countdownTimer.className = 'countdown-timer expired';
         } else {
+            // Còn thời gian - hiển thị countdown
             const minutes = Math.floor(diff / 60000);
             const seconds = Math.floor((diff % 60000) / 1000);
+
+            countdownLabel.textContent = '⏰ Còn lại để xin đi trễ:';
             countdownTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
             if (minutes >= 10) {
                 countdownTimer.className = 'countdown-timer safe';
-            } else {
+            } else if (minutes >= 5) {
                 countdownTimer.className = 'countdown-timer';
+            } else {
+                countdownTimer.className = 'countdown-timer urgent';
             }
         }
     }
