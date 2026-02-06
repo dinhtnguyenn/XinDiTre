@@ -62,8 +62,7 @@ async function lookupStudent(mssv) {
     }
 
     try {
-        // Tạm thời bỏ chức năng tự động lấy họ tên theo yêu cầu
-        /*
+        // Auto-fill logic enabled
         const response = await fetch(`/api/lookup-student/${encodeURIComponent(mssv)}`);
         const result = await response.json();
 
@@ -82,7 +81,6 @@ async function lookupStudent(mssv) {
                 isAutoFilled = false;
             }
         }
-        */
 
         // Save MSSV manually since we skipped validation
         localStorage.setItem('saved_mssv', mssv);
@@ -133,6 +131,9 @@ async function startCamera() {
 
         startCameraBtn.style.display = 'none';
         captureBtn.style.display = 'inline-flex';
+
+        // Start Liveness Check Immediately
+        startLivenessCheck();
 
     } catch (error) {
         console.error('Lỗi khi bật camera:', error);
@@ -766,36 +767,162 @@ async function loadFaceModel() {
     }
 }
 
+// ============================================
+// AI Liveness Check
+// ============================================
+let livenessState = 'IDLE'; // IDLE, DETECTING, CHALLENGE, VERIFIED
+let targetDirection = null; // 'LEFT' or 'RIGHT'
+let verificationLoopId = null;
+
+async function startLivenessCheck() {
+    livenessState = 'DETECTING';
+    const overlay = document.getElementById('livenessOverlay');
+    const icon = document.getElementById('livenessIcon');
+    const text = document.getElementById('livenessText');
+    const captureBtn = document.getElementById('captureBtn');
+
+    overlay.style.display = 'flex';
+    icon.innerHTML = '🤖';
+    text.innerHTML = 'Đang tìm khuôn mặt...';
+    captureBtn.disabled = true;
+    captureBtn.style.opacity = '0.5';
+
+    verifyLivenessLoop();
+}
+
+async function verifyLivenessLoop() {
+    if (!faceModel || !stream || video.style.display === 'none') return;
+    if (livenessState === 'VERIFIED') return;
+
+    try {
+        const predictions = await faceModel.estimateFaces(video, false);
+        const overlay = document.getElementById('livenessOverlay');
+        const icon = document.getElementById('livenessIcon');
+        const text = document.getElementById('livenessText');
+
+        if (predictions.length > 0) {
+            const face = predictions[0];
+            const landmarks = face.landmarks;
+
+            // Landmarks: 0=RightEye, 1=LeftEye, 2=Nose
+            // Note: landmarks coords are relative to video size
+            const rightEyeX = landmarks[0][0];
+            const leftEyeX = landmarks[1][0];
+            const noseX = landmarks[2][0];
+
+            // Calculate ratios
+            // Distance between eyes (Reference scale)
+            const eyeDist = leftEyeX - rightEyeX;
+            // Nose relative position (0=RightEye, 1=LeftEye)
+            // If Nose is closer to RightEye (small value) -> User turned RIGHT (Screen Left)
+            // If Nose is closer to LeftEye (large value) -> User turned LEFT (Screen Right)
+
+            // Wait: 
+            // Turning Left (User's Left) -> Nose moves to User's Left (Screen Right). 
+            // Screen Coords: 0 is Left. 
+            // User looking at camera (Mirror off? No, mirror ON usually).
+            // context.scale(-1, 1) is used for drawing.
+            // But estimateFaces runs on raw video? 
+            // Raw video usually is NOT mirrored unless CSS transform scaleX(-1).
+            // Let's assume standard webcam feed.
+            // RightEye is User's Right Eye (Screen Left). x is small.
+            // LeftEye is User's Left Eye (Screen Right). x is big.
+            // Looking Left (User's Left) -> Nose moves towards Left Ear (Screen Right). 
+            // So noseX increases. Ratio (nose - right) / (left - right) increases.
+
+            const ratio = (noseX - rightEyeX) / eyeDist;
+
+            if (livenessState === 'DETECTING') {
+                // Face found, start challenge
+                livenessState = 'CHALLENGE';
+                // Randomize direction
+                targetDirection = Math.random() > 0.5 ? 'LEFT' : 'RIGHT';
+
+                if (targetDirection === 'LEFT') {
+                    icon.innerHTML = '⬅️';
+                    text.innerHTML = 'Quay mặt sang TRÁI';
+                } else {
+                    icon.innerHTML = '➡️';
+                    text.innerHTML = 'Quay mặt sang PHẢI';
+                }
+            } else if (livenessState === 'CHALLENGE') {
+                let passed = false;
+
+                // Thresholds need tuning. 
+                // Center is ~0.5.
+                // Turn Left -> Ratio > 0.65?
+                // Turn Right -> Ratio < 0.35?
+
+                // Debug: Print ratio to console
+                console.log(`Target: ${targetDirection}, Ratio: ${ratio.toFixed(2)}`);
+
+                // Logic correction:
+                // User turns LEFT -> Face turns Right (in raw feed) -> Nose moves to Left Eye (Screen Right) -> Ratio INCREASES > 0.65
+                // User turns RIGHT -> Face turns Left (in raw feed) -> Nose moves to Right Eye (Screen Left) -> Ratio DECREASES < 0.35
+
+                if (targetDirection === 'LEFT' && ratio > 0.65) {
+                    passed = true;
+                } else if (targetDirection === 'RIGHT' && ratio < 0.35) {
+                    passed = true;
+                }
+
+                if (passed) {
+                    livenessState = 'VERIFIED';
+                    overlay.style.display = 'none';
+
+                    const captureBtn = document.getElementById('captureBtn');
+                    captureBtn.disabled = false;
+                    captureBtn.style.opacity = '1';
+
+                    showToast('✅ Xác thực thành công! Hãy chụp ảnh.', 'success');
+                    return; // Stop loop
+                }
+            }
+        } else {
+            // No face lost
+            if (livenessState === 'CHALLENGE') {
+                // Reset if lost face? Or just wait.
+                // Let's keep waiting.
+            }
+        }
+    } catch (e) {
+        console.error(e);
+    }
+
+    verificationLoopId = requestAnimationFrame(verifyLivenessLoop);
+}
+
+// Hook into loadFaceModel
+const originalLoadFaceModel = loadFaceModel;
+// We modify startCamera mainly.
+
 async function detectFaceAndCapture() {
-    if (!faceModel) {
-        // Fallback nếu model chưa tải xong
+    // Check if face is present at the moment of capture
+    if (!faceModel || !stream) {
         capturePhoto();
         return;
     }
 
-    if (!stream) return;
-
-    // Show loading state on button
-    const originalBtnContent = captureBtn.innerHTML;
-    captureBtn.innerHTML = 'Scan... 🤖';
-    captureBtn.disabled = true;
+    // Show spinner
+    const btn = document.getElementById('captureBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ Checking...';
+    btn.disabled = true;
 
     try {
         const predictions = await faceModel.estimateFaces(video, false);
-
         if (predictions.length > 0) {
-            // Có khuôn mặt -> Chụp
+            // Face present -> Capture
             capturePhoto();
-            showToast('✅ Đã xác thực khuôn mặt!', 'success');
+            showToast('📸 Đã chụp ảnh!', 'success');
         } else {
-            // Không có khuôn mặt
-            showToast('⚠️ Không tìm thấy khuôn mặt! Vui lòng chụp rõ mặt.', 'error');
+            showToast('❌ Không thấy khuôn mặt! Vui lòng không che mặt.', 'error');
         }
-    } catch (error) {
-        console.error('Lỗi detect face:', error);
+    } catch (e) {
+        console.error(e);
         capturePhoto(); // Fallback
     } finally {
-        captureBtn.innerHTML = originalBtnContent;
-        captureBtn.disabled = false;
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 }
