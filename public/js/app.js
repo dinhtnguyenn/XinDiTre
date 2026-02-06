@@ -517,13 +517,11 @@ async function fetchMonthlyCount(mssv) {
         const result = await response.json();
 
         if (result.success) {
-            const now = new Date();
-            const monthlyRequests = result.data.filter(req => {
-                const reqDate = new Date(req.created_at);
-                return reqDate.getMonth() === now.getMonth() && reqDate.getFullYear() === now.getFullYear();
-            });
+            // Use server-side calculation for consistency
+            monthlyCount = result.monthlyCount || 0;
+            const monthName = result.monthName || 'tháng này';
 
-            monthlyCount = monthlyRequests.length;
+            // Legacy fallback (client-side calc) removed to prevent timezone mismatch
             const monthlyCountBox = document.getElementById('monthlyCountBox');
             const monthlyCountText = document.getElementById('monthlyCountText');
 

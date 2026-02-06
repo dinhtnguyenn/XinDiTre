@@ -269,10 +269,25 @@ app.get('/api/student-history/:mssv', async (req, res) => {
             };
         });
 
+        // Calculate Monthly Count (Vietnam Time)
+        const nowVNStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+        const nowVN = new Date(nowVNStr);
+        const currentMonth = nowVN.getMonth();
+        const currentYear = nowVN.getFullYear();
+
+        const monthlyCount = studentRequests.filter(req => {
+            const reqDate = new Date(req.created_at);
+            const vnReqDateStr = reqDate.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+            const vnReqDate = new Date(vnReqDateStr);
+            return vnReqDate.getMonth() === currentMonth && vnReqDate.getFullYear() === currentYear;
+        }).length;
+
         res.json({
             success: true,
             data: dataWithStatus,
-            total: studentRequests.length
+            total: studentRequests.length,
+            monthlyCount: monthlyCount,
+            monthName: nowVN.toLocaleString('vi-VN', { month: 'long', year: 'numeric' })
         });
     } catch (error) {
         console.error('Lỗi lấy lịch sử sinh viên:', error);
@@ -288,7 +303,7 @@ app.post('/api/late-requests', upload.single('photo'), async (req, res) => {
         let { mssv, fullname, class_session, reason, latitude, longitude, address } = req.body;
 
         // Trim tất cả input để chống bypass bằng khoảng trắng
-        mssv = (mssv || '').trim();
+        mssv = (mssv || '').trim().toUpperCase();
         fullname = (fullname || '').trim();
         class_session = (class_session || '').trim();
         reason = (reason || '').trim();
@@ -366,9 +381,17 @@ app.post('/api/late-requests', upload.single('photo'), async (req, res) => {
         const currentYear = now.getFullYear();
 
         const monthlyCount = allRequests.filter(r => {
-            if (r.mssv !== mssv) return false;
+            if (r.mssv.toUpperCase() !== mssv) return false;
+
+            // Convert to Vietnam Time string then parse back to get components
             const reqDate = new Date(r.created_at);
-            return reqDate.getMonth() === currentMonth && reqDate.getFullYear() === currentYear;
+            const vnReqDateStr = reqDate.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+            const vnReqDate = new Date(vnReqDateStr);
+
+            const nowVNStr = new Date().toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+            const nowVN = new Date(nowVNStr);
+
+            return vnReqDate.getMonth() === nowVN.getMonth() && vnReqDate.getFullYear() === nowVN.getFullYear();
         }).length;
 
         res.json({
@@ -458,7 +481,7 @@ app.get('/api/late-requests/student/:mssv', requireAdminAuth, async (req, res) =
     try {
         const { mssv } = req.params;
         const allData = await getRequests();
-        let studentData = allData.filter(req => req.mssv === mssv);
+        let studentData = allData.filter(req => req.mssv.toUpperCase() === mssv.toUpperCase());
 
         // Thêm trạng thái deadline
         studentData = studentData.map(req => {
@@ -556,9 +579,9 @@ app.get('/api/statistics', requireAdminAuth, async (req, res) => {
 
                 const studentCounts = {};
                 monthlyData.forEach(req => {
-                    const key = req.mssv;
+                    const key = req.mssv.toUpperCase();
                     if (!studentCounts[key]) {
-                        studentCounts[key] = { mssv: req.mssv, fullname: req.fullname, count: 0 };
+                        studentCounts[key] = { mssv: req.mssv.toUpperCase(), fullname: req.fullname, count: 0 };
                     }
                     studentCounts[key].count++;
                 });
