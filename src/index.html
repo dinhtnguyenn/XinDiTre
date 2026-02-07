@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xin Đi Trễ - Sinh Viên</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -22,11 +24,20 @@
             <div class="logo">
                 <span class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></span>
                 <h1>Xin Đi Trễ</h1>
+                <button id="helpBtn" class="theme-toggle" title="Hướng dẫn sử dụng">
+                    <i class="fa-solid fa-circle-info"></i>
+                </button>
                 <button id="darkModeToggle" class="theme-toggle" title="Chế độ tối/sáng">
                     <i class="fa-solid fa-circle-half-stroke"></i>
                 </button>
             </div>
             <p class="subtitle">Hệ thống xin phép đi trễ dành cho sinh viên</p>
+
+            <!-- Lunar Date Display -->
+            <div class="lunar-date" id="lunarDate">
+                <i class="fa-solid fa-moon"></i>
+                <span id="lunarDateText">Đang tải...</span>
+            </div>
 
             <!-- Countdown Timer -->
             <div class="countdown-box" id="countdownBox" style="display: none;">
@@ -299,6 +310,50 @@
         </button>
         <img class="modal-content" id="zoomedImage"
             style="width: 90%; max-width: 800px; height: auto; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <button class="modal-close" id="closeHelpModal">&times;</button>
+            <h2 class="modal-title"><i class="fa-solid fa-circle-info"></i> Hướng dẫn sử dụng</h2>
+            <div class="modal-body">
+                <div class="help-steps">
+                    <div class="help-step">
+                        <span class="step-number">1</span>
+                        <div class="step-content">
+                            <h4><i class="fa-solid fa-file-pen"></i> Điền thông tin</h4>
+                            <p>Nhập MSSV, họ tên, chọn ca học và lý do đi trễ</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <span class="step-number">2</span>
+                        <div class="step-content">
+                            <h4><i class="fa-solid fa-camera"></i> Chụp ảnh xác thực</h4>
+                            <p>Bật camera và chụp ảnh selfie để xác minh danh tính</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <span class="step-number">3</span>
+                        <div class="step-content">
+                            <h4><i class="fa-solid fa-location-dot"></i> Xác nhận vị trí</h4>
+                            <p>Cho phép truy cập GPS để xác định vị trí hiện tại</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <span class="step-number">4</span>
+                        <div class="step-content">
+                            <h4><i class="fa-solid fa-paper-plane"></i> Gửi yêu cầu</h4>
+                            <p>Nhấn "Gửi yêu cầu" và chờ xác nhận từ hệ thống</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="help-note">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Lưu ý: Mỗi MSSV chỉ được gửi tối đa <strong>3 lần/ngày</strong></span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Toast notification -->
