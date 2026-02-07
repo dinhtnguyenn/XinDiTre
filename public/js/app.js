@@ -462,7 +462,15 @@ async function handleSubmit(e) {
             const monthlyMsg = result.monthlyCount
                 ? ` (Lần thứ ${result.monthlyCount} trong ${result.monthName})`
                 : '';
-            showToast(`Gửi yêu cầu thành công! 🎉${monthlyMsg}`, 'success');
+            showToast(`Gửi yêu cầu thành công! 🎟️${monthlyMsg}`, 'success');
+
+            // Show Digital Ticket
+            showTicket({
+                id: result.id,
+                fullname: fullname,
+                mssv: mssv,
+                class_session: classSession
+            });
 
             // Reset form
             form.reset();
@@ -522,10 +530,84 @@ document.getElementById('closeHistoryModal').addEventListener('click', () => {
     document.getElementById('historyModal').classList.remove('show');
 });
 
-document.getElementById('historyModal').addEventListener('click', (e) => {
-    if (e.target.id === 'historyModal') {
-        document.getElementById('historyModal').classList.remove('show');
+// ============================================
+// Digital Ticket Functions
+// ============================================
+let ticketInterval = null;
+
+function showTicket(data) {
+    const modal = document.getElementById('ticketModal');
+    const ticketPhoto = document.getElementById('ticketPhoto');
+    const qrContainer = document.getElementById('qrcode');
+
+    // Populate info
+    document.getElementById('ticketStudentName').textContent = data.fullname;
+    document.getElementById('ticketMssv').textContent = data.mssv;
+    document.getElementById('ticketClass').textContent = data.class_session;
+    document.getElementById('ticketTime').textContent = new Date().toLocaleString('vi-VN');
+
+    // Set photo
+    if (photoBlob) {
+        ticketPhoto.src = URL.createObjectURL(photoBlob);
     }
+
+    // Generate QR Code
+    qrContainer.innerHTML = '';
+    new QRCode(qrContainer, {
+        text: JSON.stringify({
+            id: data.id,
+            mssv: data.mssv,
+            time: new Date().toISOString(),
+            valid: true
+        }),
+        width: 100,
+        height: 100
+    });
+
+    // Start Timer (10 minutes)
+    startTicketTimer(10 * 60);
+
+    // Show modal
+    modal.classList.add('show');
+    modal.style.display = 'flex';
+}
+
+function startTicketTimer(duration) {
+    const timerDisplay = document.getElementById('ticketTimer');
+    const header = document.querySelector('.ticket-header');
+    const statusText = document.querySelector('.status-text');
+    const statusIcon = document.querySelector('.status-icon');
+
+    let timer = duration;
+
+    // Reset state
+    header.classList.remove('expired');
+    statusText.textContent = 'DIGITAL TICKET';
+    statusIcon.textContent = '✅';
+
+    if (ticketInterval) clearInterval(ticketInterval);
+
+    ticketInterval = setInterval(() => {
+        const minutes = Math.floor(timer / 60);
+        const seconds = timer % 60;
+
+        timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+        if (--timer < 0) {
+            clearInterval(ticketInterval);
+            header.classList.add('expired');
+            statusText.textContent = 'DIGITAL TICKET';
+            statusIcon.textContent = '❌';
+            timerDisplay.textContent = "00:00";
+        }
+    }, 1000);
+}
+
+// Close Ticket Button
+document.getElementById('closeTicketBtn').addEventListener('click', () => {
+    document.getElementById('ticketModal').classList.remove('show');
+    document.getElementById('ticketModal').style.display = 'none';
+    if (ticketInterval) clearInterval(ticketInterval);
 });
 
 // Class session change - update countdown
@@ -916,8 +998,7 @@ async function verifyLivenessLoop() {
     verificationLoopId = requestAnimationFrame(verifyLivenessLoop);
 }
 
-// Hook into loadFaceModel
-const originalLoadFaceModel = loadFaceModel;
+
 // We modify startCamera mainly.
 
 async function detectFaceAndCapture() {

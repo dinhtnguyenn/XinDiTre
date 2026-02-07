@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- QRCode.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -194,6 +196,43 @@
         <footer class="footer">
             <p>© 2026 - Hệ thống Xin Đi Trễ | DinhNT24</p>
         </footer>
+    </div>
+
+    <!-- Modal Vé Thông Hành (Digital Ticket) -->
+    <div id="ticketModal" class="modal" style="z-index: 3000;">
+        <div class="modal-content ticket-modal">
+            <div class="ticket-header">
+                <div class="ticket-status">
+                    <span class="status-icon">✅</span>
+                    <span class="status-text">DIGITAL TICKET</span>
+                </div>
+                <div class="ticket-timer" id="ticketTimer">10:00</div>
+            </div>
+
+            <div class="ticket-body">
+                <div class="ticket-info">
+                    <h2 id="ticketStudentName" class="student-name"></h2>
+                    <p class="student-mssv">MSSV: <span id="ticketMssv"></span></p>
+                    <p class="ticket-class">Ca học: <span id="ticketClass"></span></p>
+                    <p class="ticket-time">Thời gian: <span id="ticketTime"></span></p>
+                </div>
+
+                <div class="ticket-visuals">
+                    <div class="ticket-photo-container">
+                        <img id="ticketPhoto" src="" alt="Selfie">
+                    </div>
+                    <div class="qr-container">
+                        <div id="qrcode"></div>
+                        <p class="qr-note">Quét để xác thực</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ticket-footer">
+                <p>Bạn có 10 phút để đến lớp.</p>
+                <button id="closeTicketBtn" class="btn btn-primary btn-sm">Đóng vé</button>
+            </div>
+        </div>
     </div>
 
     <!-- Modal lịch sử sinh viên -->
