@@ -113,18 +113,21 @@ body.dark-mode .pagination-page.active {
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    /* Fallback solid color */
-    background-color: #0077b6;
-    /* Standard gradient */
-    background: var(--bg-gradient-animated);
-    /* Webkit fallback for older iOS */
+    /* Water Element (Thủy) gradient - direct values for iOS */
+    background: #0077b6;
     background: -webkit-linear-gradient(-45deg, #00b4d8, #0077b6, #023e8a, #03045e, #001845);
+    background: -moz-linear-gradient(-45deg, #00b4d8, #0077b6, #023e8a, #03045e, #001845);
+    background: -o-linear-gradient(-45deg, #00b4d8, #0077b6, #023e8a, #03045e, #001845);
     background: linear-gradient(-45deg, #00b4d8, #0077b6, #023e8a, #03045e, #001845);
     -webkit-background-size: 400% 400%;
+    -moz-background-size: 400% 400%;
     background-size: 400% 400%;
     -webkit-animation: gradientShift 15s ease infinite;
+    -moz-animation: gradientShift 15s ease infinite;
     animation: gradientShift 15s ease infinite;
     min-height: 100vh;
+    min-height: -webkit-fill-available;
+    /* iOS Safari fix */
     color: var(--text-primary);
     line-height: 1.6;
     -webkit-user-select: none;
@@ -137,6 +140,20 @@ body {
 
 /* Animated Background Gradient */
 @-webkit-keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@-moz-keyframes gradientShift {
     0% {
         background-position: 0% 50%;
     }
