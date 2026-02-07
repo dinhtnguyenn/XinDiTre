@@ -181,6 +181,24 @@ body {
     }
 }
 
+/* Mobile: Solid background for better iOS compatibility */
+@media screen and (max-width: 768px) {
+    body {
+        background: #023e8a !important;
+        -webkit-animation: none !important;
+        animation: none !important;
+    }
+
+    body::before,
+    body::after {
+        display: none !important;
+    }
+
+    body.dark-mode {
+        background: #001233 !important;
+    }
+}
+
 /* Floating Orbs Background */
 body::before,
 body::after {
