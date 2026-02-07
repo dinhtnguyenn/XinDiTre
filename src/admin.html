@@ -109,7 +109,34 @@
                 <div class="chart-card">
                     <h3><i class="fa-solid fa-trophy"></i> Top sinh viên xin nhiều nhất (tháng này)</h3>
                     <div class="top-students-list" id="topStudentsList">
-                        <p style="color: #64748b; text-align: center;">Đang tải...</p>
+                        <!-- Skeleton Loading -->
+                        <div class="skeleton-container" id="topStudentsSkeleton">
+                            <div class="skeleton-top-student">
+                                <div class="skeleton skeleton-rank"></div>
+                                <div class="skeleton skeleton-student-name"></div>
+                                <div class="skeleton skeleton-student-count"></div>
+                            </div>
+                            <div class="skeleton-top-student">
+                                <div class="skeleton skeleton-rank"></div>
+                                <div class="skeleton skeleton-student-name"></div>
+                                <div class="skeleton skeleton-student-count"></div>
+                            </div>
+                            <div class="skeleton-top-student">
+                                <div class="skeleton skeleton-rank"></div>
+                                <div class="skeleton skeleton-student-name"></div>
+                                <div class="skeleton skeleton-student-count"></div>
+                            </div>
+                            <div class="skeleton-top-student">
+                                <div class="skeleton skeleton-rank"></div>
+                                <div class="skeleton skeleton-student-name"></div>
+                                <div class="skeleton skeleton-student-count"></div>
+                            </div>
+                            <div class="skeleton-top-student">
+                                <div class="skeleton skeleton-rank"></div>
+                                <div class="skeleton skeleton-student-name"></div>
+                                <div class="skeleton skeleton-student-count"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -175,10 +202,145 @@
                             </tr>
                         </thead>
                         <tbody id="requestsBody">
-                            <tr>
-                                <td colspan="8" class="loading-row">
-                                    <span class="loader"></span>
-                                    Đang tải dữ liệu...
+                            <!-- Skeleton Loading Rows -->
+                            <tr class="skeleton-row">
+                                <td>
+                                    <div class="skeleton skeleton-cell checkbox"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell stt" style="width: 30px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell mssv" style="width: 80px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell name" style="width: 120px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell class" style="width: 100px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell time" style="width: 130px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell status"
+                                        style="width: 80px; height: 24px; border-radius: 12px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell action"
+                                        style="width: 70px; height: 28px; border-radius: 6px;"></div>
+                                </td>
+                            </tr>
+                            <tr class="skeleton-row">
+                                <td>
+                                    <div class="skeleton skeleton-cell checkbox"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell stt" style="width: 30px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell mssv" style="width: 80px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell name" style="width: 140px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell class" style="width: 100px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell time" style="width: 130px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell status"
+                                        style="width: 80px; height: 24px; border-radius: 12px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell action"
+                                        style="width: 70px; height: 28px; border-radius: 6px;"></div>
+                                </td>
+                            </tr>
+                            <tr class="skeleton-row">
+                                <td>
+                                    <div class="skeleton skeleton-cell checkbox"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell stt" style="width: 30px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell mssv" style="width: 80px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell name" style="width: 110px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell class" style="width: 100px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell time" style="width: 130px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell status"
+                                        style="width: 80px; height: 24px; border-radius: 12px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell action"
+                                        style="width: 70px; height: 28px; border-radius: 6px;"></div>
+                                </td>
+                            </tr>
+                            <tr class="skeleton-row">
+                                <td>
+                                    <div class="skeleton skeleton-cell checkbox"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell stt" style="width: 30px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell mssv" style="width: 80px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell name" style="width: 130px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell class" style="width: 100px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell time" style="width: 130px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell status"
+                                        style="width: 80px; height: 24px; border-radius: 12px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell action"
+                                        style="width: 70px; height: 28px; border-radius: 6px;"></div>
+                                </td>
+                            </tr>
+                            <tr class="skeleton-row">
+                                <td>
+                                    <div class="skeleton skeleton-cell checkbox"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell stt" style="width: 30px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell mssv" style="width: 80px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell name" style="width: 125px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell class" style="width: 100px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell time" style="width: 130px; height: 16px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell status"
+                                        style="width: 80px; height: 24px; border-radius: 12px;"></div>
+                                </td>
+                                <td>
+                                    <div class="skeleton skeleton-cell action"
+                                        style="width: 70px; height: 28px; border-radius: 6px;"></div>
                                 </td>
                             </tr>
                         </tbody>
