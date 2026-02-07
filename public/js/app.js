@@ -445,31 +445,11 @@ function capturePhoto() {
             // Use full address as requested
             const addressFull = address || '';
 
-            // Format Lat/Long string
-            const latLongStr = (latitude && longitude) ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` : '';
-            const locationInfo = addressFull || (latLongStr || 'Không xác định');
+            // Use Helpers to Generate Content
+            const student = getStudentInfo();
+            const location = getLocationInfo();
 
-            // Get Input Values
-            const mssvVal = document.getElementById('mssv').value.trim() || 'N/A';
-            const fullnameVal = document.getElementById('fullname').value.trim() || 'N/A';
-            const classSessionVal = document.getElementById('class_session').value || 'N/A';
-
-            // Calculate Distance
-            let distanceStr = 'N/A';
-            if (latitude && longitude && typeof SCHOOL_COORDS !== 'undefined') {
-                const dist = calculateDistance(latitude, longitude, SCHOOL_COORDS.latitude, SCHOOL_COORDS.longitude);
-                distanceStr = `${dist} km`;
-            }
-
-            photoTextDetails.innerHTML = `
-                <div><i class="fa-solid fa-user"></i> <strong>Sinh viên:</strong> ${fullnameVal} (${mssvVal})</div>
-                <div><i class="fa-solid fa-book"></i> <strong>Ca học:</strong> ${classSessionVal}</div>
-                <div><i class="fa-regular fa-clock"></i> <strong>Thời gian:</strong> ${timestamp}</div>
-                <div><i class="fa-solid fa-location-arrow"></i> <strong>Khoảng cách:</strong> ${distanceStr}</div>
-                <div><i class="fa-solid fa-cloud-sun"></i> <strong>Thời tiết:</strong> ${weatherInfo}</div>
-                <div><i class="fa-solid fa-map-pin"></i> <strong>Vị trí:</strong> ${locationInfo}</div>
-                ${latLongStr ? `<div><i class="fa-solid fa-location-crosshairs"></i> <strong>Tọa độ:</strong> ${latLongStr}</div>` : ''}
-            `;
+            photoTextDetails.innerHTML = generateInfoHTML(student, location, timestamp, weatherInfo);
             photoTextDetails.style.display = 'block';
             photoTextDetails.style.border = 'none'; // Reset any debug border
         }
@@ -500,17 +480,9 @@ function addWatermark(ctx, width, height) {
         ? (address.length > 60 ? address.substring(0, 60) + '...' : address)
         : '';
 
-    // Get Student Info
-    const mssvVal = document.getElementById('mssv').value.trim() || 'N/A';
-    const fullnameVal = document.getElementById('fullname').value.trim() || 'N/A';
-    const classSessionVal = document.getElementById('class_session').value || 'N/A';
-
-    // Calculate Distance
-    let distanceStr = 'N/A';
-    if (latitude && longitude && typeof SCHOOL_COORDS !== 'undefined') {
-        const dist = calculateDistance(latitude, longitude, SCHOOL_COORDS.latitude, SCHOOL_COORDS.longitude);
-        distanceStr = `${dist} km`;
-    }
+    // Get Data using Helpers
+    const student = getStudentInfo();
+    const location = getLocationInfo();
 
     // Background for watermark
     const padding = 10;
@@ -539,11 +511,11 @@ function addWatermark(ctx, width, height) {
     let currentY = height - boxHeight + padding;
 
     // Draw Student Info
-    ctx.fillText(`👤 ${fullnameVal} - ${mssvVal}`, padding, currentY);
+    ctx.fillText(`👤 ${student.fullname} - ${student.mssv}`, padding, currentY);
     currentY += lineHeight;
 
     // Draw Class & Distance
-    ctx.fillText(`📚 ${classSessionVal} | 📏 Cách trường: ${distanceStr}`, padding, currentY);
+    ctx.fillText(`📚 ${student.classSession} | 📏 Cách trường: ${location.distanceStr}`, padding, currentY);
     currentY += lineHeight;
 
     // Draw timestamp
@@ -1580,31 +1552,11 @@ function captureEvidence() {
             // Use full address as requested
             const addressFull = address || '';
 
-            // Format Lat/Long string
-            const latLongStr = (latitude && longitude) ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` : '';
-            const locationInfo = addressFull || (latLongStr || 'Không xác định');
+            // Use Helpers to Generate Content
+            const student = getStudentInfo();
+            const location = getLocationInfo();
 
-            // Get Input Values
-            const mssvVal = document.getElementById('mssv').value.trim() || 'N/A';
-            const fullnameVal = document.getElementById('fullname').value.trim() || 'N/A';
-            const classSessionVal = document.getElementById('class_session').value || 'N/A';
-
-            // Calculate Distance
-            let distanceStr = 'N/A';
-            if (latitude && longitude && typeof SCHOOL_COORDS !== 'undefined') {
-                const dist = calculateDistance(latitude, longitude, SCHOOL_COORDS.latitude, SCHOOL_COORDS.longitude);
-                distanceStr = `${dist} km`;
-            }
-
-            evidenceTextDetails.innerHTML = `
-                <div><i class="fa-solid fa-user"></i> <strong>Sinh viên:</strong> ${fullnameVal} (${mssvVal})</div>
-                <div><i class="fa-solid fa-book"></i> <strong>Ca học:</strong> ${classSessionVal}</div>
-                <div><i class="fa-regular fa-clock"></i> <strong>Thời gian:</strong> ${timestamp}</div>
-                <div><i class="fa-solid fa-location-arrow"></i> <strong>Khoảng cách:</strong> ${distanceStr}</div>
-                <div><i class="fa-solid fa-cloud-sun"></i> <strong>Thời tiết:</strong> ${weatherInfo}</div>
-                <div><i class="fa-solid fa-map-pin"></i> <strong>Vị trí:</strong> ${locationInfo}</div>
-                ${latLongStr ? `<div><i class="fa-solid fa-location-crosshairs"></i> <strong>Tọa độ:</strong> ${latLongStr}</div>` : ''}
-            `;
+            evidenceTextDetails.innerHTML = generateInfoHTML(student, location, timestamp, weatherInfo);
             evidenceTextDetails.style.display = 'block';
         }
 
