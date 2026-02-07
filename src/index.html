@@ -8,6 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- QRCode.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -18,17 +20,17 @@
     <div class="container">
         <header class="header">
             <div class="logo">
-                <span class="logo-icon">🎓</span>
+                <span class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></span>
                 <h1>Xin Đi Trễ</h1>
                 <button id="darkModeToggle" class="theme-toggle" title="Chế độ tối/sáng">
-                    🌓
+                    <i class="fa-solid fa-circle-half-stroke"></i>
                 </button>
             </div>
             <p class="subtitle">Hệ thống xin phép đi trễ dành cho sinh viên</p>
 
             <!-- Countdown Timer -->
             <div class="countdown-box" id="countdownBox" style="display: none;">
-                <span class="countdown-label">⏰ Còn lại để xin đi trễ:</span>
+                <span class="countdown-label"><i class="fa-solid fa-clock"></i> Còn lại để xin đi trễ:</span>
                 <span class="countdown-timer" id="countdownTimer">--:--</span>
             </div>
         </header>
@@ -38,7 +40,7 @@
                 <!-- Thông tin sinh viên -->
                 <div class="form-section">
                     <h2 class="section-title">
-                        <span class="section-icon">📝</span>
+                        <span class="section-icon"><i class="fa-solid fa-file-pen"></i></span>
                         Thông tin sinh viên
                     </h2>
 
@@ -49,7 +51,7 @@
                                 <input type="text" id="mssv" name="mssv" placeholder="VD: PS12345" required>
                                 <button type="button" id="viewHistoryBtn" class="btn btn-sm btn-secondary"
                                     title="Xem lịch sử">
-                                    📜
+                                    <i class="fa-solid fa-clock-rotate-left"></i>
                                 </button>
                             </div>
                         </div>
@@ -61,7 +63,7 @@
 
                     <!-- Số lần xin trong tháng -->
                     <div class="monthly-count-box" id="monthlyCountBox" style="display: none;">
-                        <span class="monthly-count-icon">📊</span>
+                        <span class="monthly-count-icon"><i class="fa-solid fa-chart-simple"></i></span>
                         <span class="monthly-count-text" id="monthlyCountText">Bạn đã xin 0 lần trong tháng này</span>
                     </div>
 
@@ -89,7 +91,7 @@
                 <!-- Camera & GPS -->
                 <div class="form-section">
                     <h2 class="section-title">
-                        <span class="section-icon">📸</span>
+                        <span class="section-icon"><i class="fa-solid fa-camera"></i></span>
                         Ảnh xác nhận & Vị trí
                     </h2>
 
@@ -99,14 +101,16 @@
                             <canvas id="canvas" style="display: none;"></canvas>
                             <img id="photoPreview" class="photo-preview" style="display: none;">
                             <div class="camera-overlay" id="cameraOverlay">
-                                <span class="camera-icon">📷</span>
+                                <span class="camera-icon"><i class="fa-solid fa-camera"
+                                        style="font-size: 48px;"></i></span>
                                 <p>Nhấn để bật camera</p>
                             </div>
                             <!-- Liveness Check Overlay -->
                             <div class="camera-overlay" id="livenessOverlay"
                                 style="display: none; background: rgba(0,0,0,0.8); z-index: 20;">
                                 <div id="livenessIcon"
-                                    style="font-size: 64px; margin-bottom: 16px; animation: bounce 1s infinite;">⬅️
+                                    style="font-size: 64px; margin-bottom: 16px; animation: bounce 1s infinite;"><i
+                                        class="fa-solid fa-arrow-left"></i>
                                 </div>
                                 <div id="livenessText"
                                     style="color: white; font-weight: bold; font-size: 24px; text-align: center; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
@@ -116,13 +120,13 @@
 
                         <div class="camera-controls">
                             <button type="button" id="startCameraBtn" class="btn btn-secondary" disabled>
-                                ⏳ Đang tải AI nhận diện khuôn mặt...
+                                <i class="fa-solid fa-spinner fa-spin"></i> Đang tải AI nhận diện khuôn mặt...
                             </button>
                             <button type="button" id="captureBtn" class="btn btn-primary" style="display: none;">
-                                <span>📸</span> Chụp ảnh
+                                <i class="fa-solid fa-camera"></i> Chụp ảnh
                             </button>
                             <button type="button" id="retakeBtn" class="btn btn-secondary" style="display: none;">
-                                <span>🔄</span> Chụp lại
+                                <i class="fa-solid fa-rotate"></i> Chụp lại
                             </button>
                         </div>
 
@@ -130,7 +134,7 @@
                         <div id="evidenceSection"
                             style="display: none; margin-top: 16px; padding: 16px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; border: 1px solid #f59e0b;">
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-                                <span style="font-size: 24px;">📎</span>
+                                <i class="fa-solid fa-paperclip" style="font-size: 24px; color: #92400e;"></i>
                                 <div>
                                     <strong style="color: #92400e;">Thêm minh chứng (Tùy chọn)</strong>
                                     <p style="font-size: 12px; color: #a16207; margin: 0;">Chụp ảnh kẹt xe, xe hỏng...
@@ -146,19 +150,19 @@
                             <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
                                 <button type="button" id="startEvidenceCamBtn" class="btn btn-secondary"
                                     style="font-size: 14px; padding: 8px 16px;">
-                                    📷 Bật Camera Sau
+                                    <i class="fa-solid fa-camera"></i> Bật Camera Sau
                                 </button>
                                 <button type="button" id="captureEvidenceBtn" class="btn btn-primary"
                                     style="display: none; font-size: 14px; padding: 8px 16px;">
-                                    📸 Chụp minh chứng
+                                    <i class="fa-solid fa-camera"></i> Chụp minh chứng
                                 </button>
                                 <button type="button" id="retakeEvidenceBtn" class="btn btn-secondary"
                                     style="display: none; font-size: 14px; padding: 8px 16px;">
-                                    🔄 Chụp lại
+                                    <i class="fa-solid fa-rotate"></i> Chụp lại
                                 </button>
                                 <button type="button" id="removeEvidenceBtn" class="btn"
                                     style="display: none; font-size: 14px; padding: 8px 16px; background: #ef4444; color: white;">
-                                    ❌ Bỏ ảnh
+                                    <i class="fa-solid fa-xmark"></i> Bỏ ảnh
                                 </button>
                             </div>
                         </div>
@@ -166,7 +170,7 @@
 
                     <div class="location-section">
                         <div class="location-status" id="locationStatus">
-                            <span class="location-icon">📍</span>
+                            <span class="location-icon"><i class="fa-solid fa-location-dot"></i></span>
                             <span class="location-text">Đang lấy vị trí của bạn...</span>
                         </div>
                         <div class="location-details" id="locationDetails" style="display: none;">
@@ -174,7 +178,8 @@
                             <small id="coordsText"></small>
                             <div class="distance-info" id="distanceInfo"
                                 style="display: none; margin-top: 8px; font-weight: 600; color: var(--primary);">
-                                📍 Cách trường: <span id="distanceValue">--</span> km
+                                <i class="fa-solid fa-location-dot"></i> Cách trường: <span id="distanceValue">--</span>
+                                km
                             </div>
                         </div>
                         <!-- Mini Map -->
@@ -187,7 +192,7 @@
                 <!-- Submit -->
                 <div class="form-actions">
                     <button type="submit" id="submitBtn" class="btn btn-submit">
-                        <span>🚀</span> Gửi yêu cầu
+                        <i class="fa-solid fa-paper-plane"></i> Gửi yêu cầu
                     </button>
                 </div>
             </form>
@@ -203,7 +208,7 @@
         <div class="modal-content ticket-modal">
             <div class="ticket-header">
                 <div class="ticket-status">
-                    <span class="status-icon">✅</span>
+                    <span class="status-icon"><i class="fa-solid fa-circle-check"></i></span>
                     <span class="status-text">DIGITAL TICKET</span>
                 </div>
                 <div class="ticket-timer" id="ticketTimer">10:00</div>
@@ -230,7 +235,7 @@
 
             <div class="ticket-footer">
                 <p>Bạn có 10 phút để đến lớp.</p>
-                <button id="closeTicketBtn" class="btn btn-primary btn-sm">Đóng vé</button>
+                <button id="closeTicketBtn" class="btn btn-primary btn-sm">Đóng</button>
             </div>
         </div>
     </div>
@@ -239,7 +244,7 @@
     <div id="historyModal" class="modal">
         <div class="modal-content">
             <button class="modal-close" id="closeHistoryModal">&times;</button>
-            <h2 class="modal-title">📜 Lịch sử xin đi trễ của bạn</h2>
+            <h2 class="modal-title"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử xin đi trễ của bạn</h2>
 
             <div class="modal-body">
                 <div class="student-info"

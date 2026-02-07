@@ -207,8 +207,8 @@ function addWatermark(ctx, width, height) {
     });
 
     const gpsText = latitude && longitude
-        ? `📍 ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
-        : '📍 Không có GPS';
+        ? `<i class="fa-solid fa-location-dot"></i> ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+        : '<i class="fa-solid fa-location-dot"></i> Không có GPS';
 
     const addressShort = address
         ? (address.length > 50 ? address.substring(0, 50) + '...' : address)
@@ -228,7 +228,7 @@ function addWatermark(ctx, width, height) {
     ctx.textBaseline = 'top';
 
     // Draw timestamp
-    ctx.fillText(`🕐 ${timestamp}`, padding, height - boxHeight + padding);
+    ctx.fillText(`[${timestamp}]`, padding, height - boxHeight + padding);
 
     // Draw GPS
     ctx.fillText(gpsText, padding, height - boxHeight + padding + lineHeight);
@@ -236,7 +236,7 @@ function addWatermark(ctx, width, height) {
     // Draw address (if available)
     if (addressShort) {
         ctx.font = '12px Inter, Arial, sans-serif';
-        ctx.fillText(`📫 ${addressShort}`, padding, height - boxHeight + padding + lineHeight * 2);
+        ctx.fillText(`${addressShort}`, padding, height - boxHeight + padding + lineHeight * 2);
     }
 
     // Add verification badge
@@ -301,7 +301,7 @@ function getLocation() {
             // Update UI
             locationStatus.classList.add('success');
             locationStatus.innerHTML = `
-                <span class="location-icon">✅</span>
+                <span class="location-icon"><i class="fa-solid fa-circle-check"></i></span>
                 <span class="location-text">Đã lấy được vị trí của bạn</span>
             `;
 
@@ -357,7 +357,7 @@ function getLocation() {
 function showLocationError(message) {
     locationStatus.classList.add('error');
     locationStatus.innerHTML = `
-        <span class="location-icon">❌</span>
+        <span class="location-icon"><i class="fa-solid fa-circle-xmark"></i></span>
         <span class="location-text">${message}</span>
     `;
 }
@@ -420,7 +420,7 @@ async function handleSubmit(e) {
 
     // Validate ảnh và vị trí
     if (!photoBlob) {
-        showToast('Vui lòng chụp ảnh selfie! Hãy nhấn nút "📸 Chụp ảnh" để ghi nhận hình ảnh', 'error');
+        showToast('Vui lòng chụp ảnh selfie! Hãy nhấn nút "Chụp ảnh" để ghi nhận hình ảnh', 'error');
         return;
     }
 
@@ -462,7 +462,7 @@ async function handleSubmit(e) {
             const monthlyMsg = result.monthlyCount
                 ? ` (Lần thứ ${result.monthlyCount} trong ${result.monthName})`
                 : '';
-            showToast(`Gửi yêu cầu thành công! 🎟️${monthlyMsg}`, 'success');
+            showToast(`Gửi yêu cầu thành công!${monthlyMsg}`, 'success');
 
             // Show Digital Ticket
             showTicket({
@@ -498,7 +498,7 @@ async function handleSubmit(e) {
 
     // Enable button
     submitBtn.disabled = false;
-    submitBtn.innerHTML = '<span>🚀</span> Gửi yêu cầu';
+    submitBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Gửi yêu cầu';
 }
 
 // ============================================
@@ -583,7 +583,7 @@ function startTicketTimer(duration) {
     // Reset state
     header.classList.remove('expired');
     statusText.textContent = 'DIGITAL TICKET';
-    statusIcon.textContent = '✅';
+    statusIcon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
 
     if (ticketInterval) clearInterval(ticketInterval);
 
@@ -597,7 +597,7 @@ function startTicketTimer(duration) {
             clearInterval(ticketInterval);
             header.classList.add('expired');
             statusText.textContent = 'DIGITAL TICKET';
-            statusIcon.textContent = '❌';
+            statusIcon.innerHTML = '<i class="fa-solid fa-circle-xmark"></i>';
             timerDisplay.textContent = "00:00";
         }
     }, 1000);
@@ -679,10 +679,10 @@ async function viewStudentHistory() {
             const historyBody = document.getElementById('historyBody');
             historyBody.innerHTML = result.data.map((req, index) => {
                 const statusHtml = req.is_within_deadline === true
-                    ? '<span style="color: #10b981;">✅ Trong hạn</span>'
+                    ? '<span style="color: #10b981;"><i class="fa-solid fa-circle-check"></i> Trong hạn</span>'
                     : req.is_within_deadline === false
-                        ? '<span style="color: #ef4444;">❌ Ngoài hạn</span>'
-                        : '<span style="color: #64748b;">❓ Không xác định</span>';
+                        ? '<span style="color: #ef4444;"><i class="fa-solid fa-circle-xmark"></i> Ngoài hạn</span>'
+                        : '<span style="color: #64748b;"><i class="fa-solid fa-question"></i> Không xác định</span>';
 
                 return `
                     <tr>
@@ -779,7 +779,7 @@ function showMiniMap(lat, lng) {
     }).addTo(miniMap);
 
     L.marker([lat, lng]).addTo(miniMap)
-        .bindPopup('📍 Vị trí của bạn')
+        .bindPopup('<i class="fa-solid fa-location-dot"></i> Vị trí của bạn')
         .openPopup();
 }
 
@@ -858,7 +858,7 @@ async function loadFaceModel() {
         console.log('✅ Face Model đã tải xong!');
 
         if (btn) {
-            btn.innerHTML = '📸 Bật Camera';
+            btn.innerHTML = '<i class="fa-solid fa-camera"></i> Bật Camera';
             btn.disabled = false;
         }
         // showToast('AI Đã sẵn sàng!', 'success'); // Optional: show toast
@@ -867,7 +867,7 @@ async function loadFaceModel() {
         showToast('Không thể tải AI nhận diện khuôn mặt! (Chuyển sang chế độ thường)', 'warning');
 
         if (btn) {
-            btn.innerHTML = '📸 Bật Camera (No AI)';
+            btn.innerHTML = '<i class="fa-solid fa-camera"></i> Bật Camera (No AI)';
             btn.disabled = false;
         }
     }
@@ -888,7 +888,7 @@ async function startLivenessCheck() {
     const captureBtn = document.getElementById('captureBtn');
 
     overlay.style.display = 'flex';
-    icon.innerHTML = '🤖';
+    icon.innerHTML = '<i class="fa-solid fa-robot"></i>';
     text.innerHTML = 'Đang tìm khuôn mặt...';
     captureBtn.disabled = true;
     captureBtn.style.opacity = '0.5';
@@ -948,7 +948,7 @@ async function verifyLivenessLoop() {
                     icon.innerHTML = '⬅️';
                     text.innerHTML = 'Quay mặt sang TRÁI';
                 } else {
-                    icon.innerHTML = '➡️';
+                    icon.innerHTML = '<i class="fa-solid fa-arrow-right"></i>';
                     text.innerHTML = 'Quay mặt sang PHẢI';
                 }
             } else if (livenessState === 'CHALLENGE') {
@@ -980,7 +980,7 @@ async function verifyLivenessLoop() {
                     captureBtn.disabled = false;
                     captureBtn.style.opacity = '1';
 
-                    showToast('✅ Xác thực thành công! Hãy chụp ảnh.', 'success');
+                    showToast('Xác thực thành công! Hãy chụp ảnh.', 'success');
                     return; // Stop loop
                 }
             }
@@ -1019,9 +1019,9 @@ async function detectFaceAndCapture() {
         if (predictions.length > 0) {
             // Face present -> Capture
             capturePhoto();
-            showToast('📸 Đã chụp ảnh!', 'success');
+            showToast('Đã chụp ảnh!', 'success');
         } else {
-            showToast('❌ Không thấy khuôn mặt! Vui lòng không che mặt.', 'error');
+            showToast('Không thấy khuôn mặt! Vui lòng không che mặt.', 'error');
         }
     } catch (e) {
         console.error(e);
@@ -1107,10 +1107,10 @@ async function startEvidenceCamera() {
         captureEvidenceBtn.style.display = 'inline-flex';
         evidenceUsingFrontCamera = false; // Using rear camera
 
-        showToast('📷 Camera sau đã bật!', 'success');
+        showToast('Camera sau đã bật!', 'success');
     } catch (err) {
         console.error('Evidence camera error:', err);
-        showToast('⚠️ Không thể bật camera sau. Thử dùng camera trước.', 'error');
+        showToast('Không thể bật camera sau. Thử dùng camera trước.', 'error');
 
         // Fallback to front camera
         try {
@@ -1125,7 +1125,7 @@ async function startEvidenceCamera() {
             evidenceUsingFrontCamera = true; // Using front camera - need to mirror
             evidenceVideo.style.transform = 'scaleX(-1)'; // Mirror preview for front camera
         } catch (e) {
-            showToast('❌ Không thể truy cập camera.', 'error');
+            showToast('Không thể truy cập camera.', 'error');
         }
     }
 }
@@ -1174,7 +1174,7 @@ function captureEvidence() {
         retakeEvidenceBtn.style.display = 'inline-flex';
         removeEvidenceBtn.style.display = 'inline-flex';
 
-        showToast('📸 Đã chụp minh chứng!', 'success');
+        showToast('Đã chụp minh chứng!', 'success');
     }, 'image/jpeg', 0.95); // Higher quality
 }
 
@@ -1216,7 +1216,7 @@ function removeEvidence() {
     retakeEvidenceBtn.style.display = 'none';
     removeEvidenceBtn.style.display = 'none';
 
-    showToast('🗑️ Đã bỏ ảnh minh chứng', 'info');
+    showToast('Đã bỏ ảnh minh chứng', 'info');
 }
 
 // Clear evidence completely (used after successful submit)

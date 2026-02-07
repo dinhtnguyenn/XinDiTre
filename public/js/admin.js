@@ -224,7 +224,7 @@ function renderTopStudents(students) {
         <div class="top-students-table">
             ${students.map((s, i) => `
                 <div class="top-student-row ${i === 0 ? 'first' : ''} ${i === 1 ? 'second' : ''} ${i === 2 ? 'third' : ''}">
-                    <span class="rank">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1)}</span>
+                    <span class="rank">${i === 0 ? '<i class="fa-solid fa-trophy" style="color: #fbbf24;"></i>' : i === 1 ? '<i class="fa-solid fa-medal" style="color: #94a3b8;"></i>' : i === 2 ? '<i class="fa-solid fa-medal" style="color: #d97706;"></i>' : (i + 1)}</span>
                     <span class="student-name">${escapeHtml(s.fullname)}</span>
                     <span class="student-mssv">${escapeHtml(s.mssv)}</span>
                     <span class="count">${s.count} lần</span>
@@ -281,7 +281,7 @@ async function fetchRequests() {
         requestsBody.innerHTML = `
             <tr>
                 <td colspan="8" class="empty-row">
-                    ❌ Không thể kết nối đến server
+                    <i class="fa-solid fa-circle-xmark"></i> Không thể kết nối đến server
                 </td>
             </tr>
         `;
@@ -300,7 +300,7 @@ function renderTable() {
         requestsBody.innerHTML = `
             <tr>
                 <td colspan="8" class="empty-row">
-                    📭 Không tìm thấy yêu cầu nào
+                    <i class="fa-solid fa-inbox"></i> Không tìm thấy yêu cầu nào
                 </td>
             </tr>
         `;
@@ -392,12 +392,12 @@ function goToPage(page) {
 
 function getDeadlineStatusHtml(isWithin, message) {
     if (isWithin === null) {
-        return '<span class="status-badge status-unknown">❓ Không xác định</span>';
+        return '<span class="status-badge status-unknown"><i class="fa-solid fa-question"></i> Không xác định</span>';
     }
     if (isWithin) {
-        return `<span class="status-badge status-within" title="${message}">✅ Trong hạn</span>`;
+        return `<span class="status-badge status-within" title="${message}"><i class="fa-solid fa-circle-check"></i> Trong hạn</span>`;
     }
-    return `<span class="status-badge status-outside" title="${message}">❌ Ngoài hạn</span>`;
+    return `<span class="status-badge status-outside" title="${message}"><i class="fa-solid fa-circle-xmark"></i> Ngoài hạn</span>`;
 }
 
 // ============================================
@@ -442,13 +442,13 @@ function viewDetail(id) {
     const badgeEl = document.getElementById('deadlineBadge');
     if (currentRequest.is_within_deadline === true) {
         badgeEl.className = 'deadline-badge within';
-        badgeEl.innerHTML = `✅ TRONG HẠN<br><small>${currentRequest.deadline_message}</small>`;
+        badgeEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> TRONG HẠN<br><small>${currentRequest.deadline_message}</small>`;
     } else if (currentRequest.is_within_deadline === false) {
         badgeEl.className = 'deadline-badge outside';
-        badgeEl.innerHTML = `❌ NGOÀI HẠN<br><small>${currentRequest.deadline_message}</small>`;
+        badgeEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> NGOÀI HẠN<br><small>${currentRequest.deadline_message}</small>`;
     } else {
         badgeEl.className = 'deadline-badge unknown';
-        badgeEl.innerHTML = '❓ Không xác định';
+        badgeEl.innerHTML = '<i class="fa-solid fa-question"></i> Không xác định';
     }
 
     document.getElementById('detailMssv').textContent = currentRequest.mssv;
@@ -486,7 +486,7 @@ function viewDetail(id) {
     if (currentRequest.evidence_url) {
         evidenceContainer.innerHTML = `
             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-                <span style="font-size: 20px;">📎</span>
+                <i class="fa-solid fa-paperclip" style="font-size: 20px;"></i>
                 <strong style="color: #92400e;">Ảnh bằng chứng</strong>
             </div>
             <img src="${currentRequest.evidence_url}" alt="Bằng chứng" 
@@ -505,14 +505,14 @@ function viewDetail(id) {
         const distance = calculateDistance(currentRequest.latitude, currentRequest.longitude, SCHOOL_COORDS.latitude, SCHOOL_COORDS.longitude);
 
         let color = '#10b981'; // Green
-        let icon = '🟢';
+        let icon = '<i class="fa-solid fa-circle" style="color: #22c55e;"></i>';
 
         if (distance > 20) {
             color = '#ef4444'; // Red
-            icon = '🔴';
+            icon = '<i class="fa-solid fa-circle" style="color: #ef4444;"></i>';
         } else if (distance > 5) {
             color = '#f59e0b'; // Orange
-            icon = '🟠';
+            icon = '<i class="fa-solid fa-circle" style="color: #f97316;"></i>';
         }
 
         const distanceHtml = `<br><span style="color: ${color}; font-weight: 600; margin-top: 4px; display: inline-block;">${icon} Cách trường ${distance}km</span>`;
