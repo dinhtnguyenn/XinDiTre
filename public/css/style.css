@@ -113,8 +113,16 @@ body.dark-mode .pagination-page.active {
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    /* Fallback solid color */
+    background-color: #0077b6;
+    /* Standard gradient */
     background: var(--bg-gradient-animated);
+    /* Webkit fallback for older iOS */
+    background: -webkit-linear-gradient(-45deg, #00b4d8, #0077b6, #023e8a, #03045e, #001845);
+    background: linear-gradient(-45deg, #00b4d8, #0077b6, #023e8a, #03045e, #001845);
+    -webkit-background-size: 400% 400%;
     background-size: 400% 400%;
+    -webkit-animation: gradientShift 15s ease infinite;
     animation: gradientShift 15s ease infinite;
     min-height: 100vh;
     color: var(--text-primary);
@@ -128,6 +136,20 @@ body {
 }
 
 /* Animated Background Gradient */
+@-webkit-keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
 @keyframes gradientShift {
     0% {
         background-position: 0% 50%;
