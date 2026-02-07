@@ -207,8 +207,8 @@ function addWatermark(ctx, width, height) {
     });
 
     const gpsText = latitude && longitude
-        ? `<i class="fa-solid fa-location-dot"></i> ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
-        : '<i class="fa-solid fa-location-dot"></i> Không có GPS';
+        ? `📍 ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`
+        : '📍 Không có GPS';
 
     const addressShort = address
         ? (address.length > 50 ? address.substring(0, 50) + '...' : address)
@@ -228,7 +228,7 @@ function addWatermark(ctx, width, height) {
     ctx.textBaseline = 'top';
 
     // Draw timestamp
-    ctx.fillText(`[${timestamp}]`, padding, height - boxHeight + padding);
+    ctx.fillText(`🕐 ${timestamp}`, padding, height - boxHeight + padding);
 
     // Draw GPS
     ctx.fillText(gpsText, padding, height - boxHeight + padding + lineHeight);
@@ -236,7 +236,7 @@ function addWatermark(ctx, width, height) {
     // Draw address (if available)
     if (addressShort) {
         ctx.font = '12px Inter, Arial, sans-serif';
-        ctx.fillText(`${addressShort}`, padding, height - boxHeight + padding + lineHeight * 2);
+        ctx.fillText(`📫 ${addressShort}`, padding, height - boxHeight + padding + lineHeight * 2);
     }
 
     // Add verification badge
@@ -244,7 +244,7 @@ function addWatermark(ctx, width, height) {
     ctx.fillRect(width - 120, height - boxHeight, 120, 25);
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 12px Inter, Arial, sans-serif';
-    ctx.fillText('✓ XÁC THỰC', width - 110, height - boxHeight + 7);
+    ctx.fillText('✅ XÁC THỰC', width - 110, height - boxHeight + 7);
 }
 
 function retakePhoto() {
