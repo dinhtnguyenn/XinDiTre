@@ -306,7 +306,65 @@ fullnameInput.addEventListener('input', () => {
 // ============================================
 // Camera Functions
 // ============================================
+// ============================================
+// Input Validation
+// ============================================
+function validateStudentInfo() {
+    const mssvInput = document.getElementById('mssv');
+    const fullnameInput = document.getElementById('fullname');
+    const classSessionInput = document.getElementById('class_session');
+
+    let isValid = true;
+    let errorMsg = [];
+
+    if (!mssvInput.value.trim()) {
+        isValid = false;
+        mssvInput.style.borderColor = 'red';
+        errorMsg.push('MSSV');
+    } else {
+        mssvInput.style.borderColor = '';
+    }
+
+    if (!fullnameInput.value.trim()) {
+        isValid = false;
+        fullnameInput.style.borderColor = 'red';
+        errorMsg.push('Họ và tên');
+    } else {
+        fullnameInput.style.borderColor = '';
+    }
+
+    if (!classSessionInput.value) {
+        isValid = false;
+        classSessionInput.style.borderColor = 'red';
+        errorMsg.push('Ca học');
+        classSessionInput.style.borderColor = '';
+    }
+
+    // Validate Reason
+    const reasonInput = document.getElementById('reason'); // Assuming id is 'reason' based on previous context
+    if (!reasonInput.value.trim()) {
+        isValid = false;
+        reasonInput.style.borderColor = 'red';
+        errorMsg.push('Lý do');
+    } else {
+        reasonInput.style.borderColor = '';
+    }
+
+    if (!isValid) {
+        showToast(`Vui lòng nhập đầy đủ: ${errorMsg.join(', ')}`, 'error');
+        // Scroll to top or first invalid input
+        mssvInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    return isValid;
+}
+
 async function startCamera() {
+    // Validate inputs before starting camera
+    if (!validateStudentInfo()) {
+        return;
+    }
+
     try {
         stream = await navigator.mediaDevices.getUserMedia({
             video: {
@@ -391,8 +449,23 @@ function capturePhoto() {
             const latLongStr = (latitude && longitude) ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` : '';
             const locationInfo = addressFull || (latLongStr || 'Không xác định');
 
+            // Get Input Values
+            const mssvVal = document.getElementById('mssv').value.trim() || 'N/A';
+            const fullnameVal = document.getElementById('fullname').value.trim() || 'N/A';
+            const classSessionVal = document.getElementById('class_session').value || 'N/A';
+
+            // Calculate Distance
+            let distanceStr = 'N/A';
+            if (latitude && longitude && typeof SCHOOL_COORDS !== 'undefined') {
+                const dist = calculateDistance(latitude, longitude, SCHOOL_COORDS.latitude, SCHOOL_COORDS.longitude);
+                distanceStr = `${dist} km`;
+            }
+
             photoTextDetails.innerHTML = `
+                <div><i class="fa-solid fa-user"></i> <strong>Sinh viên:</strong> ${fullnameVal} (${mssvVal})</div>
+                <div><i class="fa-solid fa-book"></i> <strong>Ca học:</strong> ${classSessionVal}</div>
                 <div><i class="fa-regular fa-clock"></i> <strong>Thời gian:</strong> ${timestamp}</div>
+                <div><i class="fa-solid fa-location-arrow"></i> <strong>Khoảng cách:</strong> ${distanceStr}</div>
                 <div><i class="fa-solid fa-cloud-sun"></i> <strong>Thời tiết:</strong> ${weatherInfo}</div>
                 <div><i class="fa-solid fa-map-pin"></i> <strong>Vị trí:</strong> ${locationInfo}</div>
                 ${latLongStr ? `<div><i class="fa-solid fa-location-crosshairs"></i> <strong>Tọa độ:</strong> ${latLongStr}</div>` : ''}
@@ -424,17 +497,38 @@ function addWatermark(ctx, width, height) {
         : '📍 Không có GPS';
 
     const addressShort = address
-        ? (address.length > 50 ? address.substring(0, 50) + '...' : address)
+        ? (address.length > 60 ? address.substring(0, 60) + '...' : address)
         : '';
+
+    // Get Student Info
+    const mssvVal = document.getElementById('mssv').value.trim() || 'N/A';
+    const fullnameVal = document.getElementById('fullname').value.trim() || 'N/A';
+    const classSessionVal = document.getElementById('class_session').value || 'N/A';
+
+    // Calculate Distance
+    let distanceStr = 'N/A';
+    if (latitude && longitude && typeof SCHOOL_COORDS !== 'undefined') {
+        const dist = calculateDistance(latitude, longitude, SCHOOL_COORDS.latitude, SCHOOL_COORDS.longitude);
+        distanceStr = `${dist} km`;
+    }
 
     // Background for watermark
     const padding = 10;
     const lineHeight = 20;
-    // Base height (Timestamp + Weather + GPS) = 20 * 3 + 15 padding = 75
-    // If address exists, add another line = 95
-    const boxHeight = addressShort ? 95 : 75;
 
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    // Calculate required height based on content
+    // Base lines: Timestamp, Weather, GPS
+    let lineCount = 3;
+
+    if (addressShort) lineCount++;
+    // Add Student Info line
+    lineCount++;
+    // Add Class & Distance line
+    lineCount++;
+
+    const boxHeight = (lineCount * lineHeight) + 15;
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)'; // Slightly darker for better readability
     ctx.fillRect(0, height - boxHeight, width, boxHeight);
 
     // Text style
@@ -443,6 +537,14 @@ function addWatermark(ctx, width, height) {
     ctx.textBaseline = 'top';
 
     let currentY = height - boxHeight + padding;
+
+    // Draw Student Info
+    ctx.fillText(`👤 ${fullnameVal} - ${mssvVal}`, padding, currentY);
+    currentY += lineHeight;
+
+    // Draw Class & Distance
+    ctx.fillText(`📚 ${classSessionVal} | 📏 Cách trường: ${distanceStr}`, padding, currentY);
+    currentY += lineHeight;
 
     // Draw timestamp
     ctx.fillText(`🕐 ${timestamp}`, padding, currentY);
@@ -754,7 +856,7 @@ function showToast(message, type = 'info') {
 // Event Listeners
 // ============================================
 startCameraBtn.addEventListener('click', startCamera);
-cameraOverlay.addEventListener('click', startCamera);
+// cameraOverlay.addEventListener('click', startCamera); // Disabled as per user request
 captureBtn.addEventListener('click', detectFaceAndCapture);
 retakeBtn.addEventListener('click', retakePhoto);
 form.addEventListener('submit', handleSubmit);
@@ -1378,6 +1480,11 @@ document.addEventListener('click', (e) => {
 // ============================================
 
 async function startEvidenceCamera() {
+    // Validate inputs before starting evidence camera
+    if (!validateStudentInfo()) {
+        return;
+    }
+
     const evidenceVideo = document.getElementById('evidenceVideo');
     const evidenceCameraContainer = document.getElementById('evidenceCameraContainer');
     const startEvidenceCamBtn = document.getElementById('startEvidenceCamBtn');
@@ -1477,8 +1584,23 @@ function captureEvidence() {
             const latLongStr = (latitude && longitude) ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` : '';
             const locationInfo = addressFull || (latLongStr || 'Không xác định');
 
+            // Get Input Values
+            const mssvVal = document.getElementById('mssv').value.trim() || 'N/A';
+            const fullnameVal = document.getElementById('fullname').value.trim() || 'N/A';
+            const classSessionVal = document.getElementById('class_session').value || 'N/A';
+
+            // Calculate Distance
+            let distanceStr = 'N/A';
+            if (latitude && longitude && typeof SCHOOL_COORDS !== 'undefined') {
+                const dist = calculateDistance(latitude, longitude, SCHOOL_COORDS.latitude, SCHOOL_COORDS.longitude);
+                distanceStr = `${dist} km`;
+            }
+
             evidenceTextDetails.innerHTML = `
+                <div><i class="fa-solid fa-user"></i> <strong>Sinh viên:</strong> ${fullnameVal} (${mssvVal})</div>
+                <div><i class="fa-solid fa-book"></i> <strong>Ca học:</strong> ${classSessionVal}</div>
                 <div><i class="fa-regular fa-clock"></i> <strong>Thời gian:</strong> ${timestamp}</div>
+                <div><i class="fa-solid fa-location-arrow"></i> <strong>Khoảng cách:</strong> ${distanceStr}</div>
                 <div><i class="fa-solid fa-cloud-sun"></i> <strong>Thời tiết:</strong> ${weatherInfo}</div>
                 <div><i class="fa-solid fa-map-pin"></i> <strong>Vị trí:</strong> ${locationInfo}</div>
                 ${latLongStr ? `<div><i class="fa-solid fa-location-crosshairs"></i> <strong>Tọa độ:</strong> ${latLongStr}</div>` : ''}
