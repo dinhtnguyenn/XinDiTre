@@ -10,10 +10,12 @@
     --danger: #ef4444;
     --warning: #f59e0b;
 
-    --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --card-bg: rgba(255, 255, 255, 0.95);
-    --glass-bg: rgba(255, 255, 255, 0.25);
-    --glass-border: rgba(255, 255, 255, 0.3);
+    /* Water Element (Thủy) - Deep blues, teals, navy */
+    --bg-gradient: linear-gradient(135deg, #0077b6 0%, #023e8a 50%, #03045e 100%);
+    --bg-gradient-animated: linear-gradient(-45deg, #00b4d8, #0077b6, #023e8a, #03045e, #001845);
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --glass-bg: rgba(255, 255, 255, 0.15);
+    --glass-border: rgba(255, 255, 255, 0.25);
 
     --text-primary: #1e293b;
     --text-secondary: #64748b;
@@ -33,10 +35,12 @@ body.dark-mode {
     --primary-dark: #6366f1;
     --primary-light: #4f46e5;
 
-    --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    --card-bg: rgba(30, 41, 59, 0.95);
-    --glass-bg: rgba(30, 41, 59, 0.4);
-    --glass-border: rgba(148, 163, 184, 0.1);
+    /* Water Element (Thủy) Dark Mode */
+    --bg-gradient: linear-gradient(135deg, #001845 0%, #001233 50%, #000814 100%);
+    --bg-gradient-animated: linear-gradient(-45deg, #023e8a, #001845, #001233, #000814, #000000);
+    --card-bg: rgba(0, 18, 51, 0.9);
+    --glass-bg: rgba(0, 36, 90, 0.3);
+    --glass-border: rgba(0, 119, 182, 0.2);
 
     --text-primary: #f1f5f9;
     --text-secondary: #cbd5e1;
@@ -109,7 +113,9 @@ body.dark-mode .pagination-page.active {
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg-gradient);
+    background: var(--bg-gradient-animated);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
     min-height: 100vh;
     color: var(--text-primary);
     line-height: 1.6;
@@ -117,6 +123,100 @@ body {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Animated Background Gradient */
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+/* Floating Orbs Background */
+body::before,
+body::after {
+    content: '';
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.5;
+    z-index: -1;
+    pointer-events: none;
+}
+
+body::before {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(0, 180, 216, 0.4) 0%, transparent 70%);
+    top: -100px;
+    right: -100px;
+    animation: floatOrb1 20s ease-in-out infinite;
+}
+
+body::after {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(0, 119, 182, 0.4) 0%, transparent 70%);
+    bottom: -50px;
+    left: -50px;
+    animation: floatOrb2 25s ease-in-out infinite;
+}
+
+@keyframes floatOrb1 {
+
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    25% {
+        transform: translate(-50px, 100px) scale(1.1);
+    }
+
+    50% {
+        transform: translate(50px, 50px) scale(0.9);
+    }
+
+    75% {
+        transform: translate(-30px, -50px) scale(1.05);
+    }
+}
+
+@keyframes floatOrb2 {
+
+    0%,
+    100% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    33% {
+        transform: translate(80px, -60px) scale(1.15);
+    }
+
+    66% {
+        transform: translate(-40px, 40px) scale(0.85);
+    }
+}
+
+/* Dark mode orb adjustments - Water Element */
+body.dark-mode::before {
+    background: radial-gradient(circle, rgba(0, 119, 182, 0.35) 0%, transparent 70%);
+    opacity: 0.7;
+}
+
+body.dark-mode::after {
+    background: radial-gradient(circle, rgba(2, 62, 138, 0.35) 0%, transparent 70%);
+    opacity: 0.7;
 }
 
 /* ============================================
@@ -1591,7 +1691,7 @@ tbody tr:last-child td {
     font-size: 2.5rem;
     font-weight: 800;
     font-family: monospace;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .ticket-body {
@@ -1618,7 +1718,8 @@ tbody tr:last-child td {
     font-size: 1rem;
 }
 
-.ticket-class, .ticket-time {
+.ticket-class,
+.ticket-time {
     margin-top: 8px;
     color: var(--text-primary);
 }
