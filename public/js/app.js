@@ -11,6 +11,9 @@ let miniMap = null;
 let countdownInterval = null;
 let monthlyCount = 0;
 let faceModel = null; // AI Face Model
+let currentWeather = null; // Weather condition
+let weatherTemp = null; // Temperature
+let weatherCode = null; // WMO Weather code
 
 // Evidence Cam Variables
 let evidenceStream = null;
@@ -367,9 +370,35 @@ function capturePhoto() {
         retakeBtn.style.display = 'inline-flex';
 
         // Show evidence section after selfie capture
+        // Show evidence section after selfie capture
         const evidenceSection = document.getElementById('evidenceSection');
         if (evidenceSection) {
             evidenceSection.style.display = 'block';
+        }
+
+        // Display Watermark Text Below Photo
+        const photoTextDetails = document.getElementById('photoTextDetails');
+
+        if (photoTextDetails) {
+            const now = new Date();
+            const timestamp = now.toLocaleString('vi-VN');
+            const weatherInfo = currentWeather ? `${currentWeather} | 🌡️ ${weatherTemp}°C` : 'N/A';
+
+            // Use full address as requested
+            const addressFull = address || '';
+
+            // Format Lat/Long string
+            const latLongStr = (latitude && longitude) ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` : '';
+            const locationInfo = addressFull || (latLongStr || 'Không xác định');
+
+            photoTextDetails.innerHTML = `
+                <div><i class="fa-regular fa-clock"></i> <strong>Thời gian:</strong> ${timestamp}</div>
+                <div><i class="fa-solid fa-cloud-sun"></i> <strong>Thời tiết:</strong> ${weatherInfo}</div>
+                <div><i class="fa-solid fa-map-pin"></i> <strong>Vị trí:</strong> ${locationInfo}</div>
+                ${latLongStr ? `<div><i class="fa-solid fa-location-crosshairs"></i> <strong>Tọa độ:</strong> ${latLongStr}</div>` : ''}
+            `;
+            photoTextDetails.style.display = 'block';
+            photoTextDetails.style.border = 'none'; // Reset any debug border
         }
 
         showToast('Đã chụp ảnh thành công! Bạn có thể thêm ảnh minh chứng (tùy chọn).', 'success');
@@ -401,7 +430,9 @@ function addWatermark(ctx, width, height) {
     // Background for watermark
     const padding = 10;
     const lineHeight = 20;
-    const boxHeight = addressShort ? 75 : 55;
+    // Base height (Timestamp + Weather + GPS) = 20 * 3 + 15 padding = 75
+    // If address exists, add another line = 95
+    const boxHeight = addressShort ? 95 : 75;
 
     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
     ctx.fillRect(0, height - boxHeight, width, boxHeight);
@@ -411,16 +442,24 @@ function addWatermark(ctx, width, height) {
     ctx.font = 'bold 14px Inter, Arial, sans-serif';
     ctx.textBaseline = 'top';
 
+    let currentY = height - boxHeight + padding;
+
     // Draw timestamp
-    ctx.fillText(`🕐 ${timestamp}`, padding, height - boxHeight + padding);
+    ctx.fillText(`🕐 ${timestamp}`, padding, currentY);
+    currentY += lineHeight;
+
+    // Draw Weather
+    const weatherText = currentWeather ? `${currentWeather} | 🌡️ ${weatherTemp}°C` : '🌦️ Đang cập nhật thời tiết...';
+    ctx.fillText(weatherText, padding, currentY);
+    currentY += lineHeight;
 
     // Draw GPS
-    ctx.fillText(gpsText, padding, height - boxHeight + padding + lineHeight);
+    ctx.fillText(gpsText, padding, currentY);
+    currentY += lineHeight;
 
-    // Draw address (if available)
+    // Draw Address
     if (addressShort) {
-        ctx.font = '12px Inter, Arial, sans-serif';
-        ctx.fillText(`📫 ${addressShort}`, padding, height - boxHeight + padding + lineHeight * 2);
+        ctx.fillText(`📫 ${addressShort}`, padding, currentY);
     }
 
     // Add verification badge
@@ -470,6 +509,9 @@ function getLocation() {
         async (position) => {
             latitude = position.coords.latitude;
             longitude = position.coords.longitude;
+
+            // Fetch Weather
+            fetchWeather(latitude, longitude);
 
             // Reverse geocoding để lấy địa chỉ
             try {
@@ -957,6 +999,50 @@ function updateCountdown(classSession) {
 }
 
 // ============================================
+// Weather API
+// ============================================
+async function fetchWeather(lat, lon) {
+    try {
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+        const data = await response.json();
+
+        if (data.current_weather) {
+            weatherTemp = data.current_weather.temperature;
+            weatherCode = data.current_weather.weathercode;
+            currentWeather = getWeatherIcon(weatherCode);
+            console.log(`🌦️ Weather: ${weatherTemp}°C, Code: ${weatherCode}`);
+        }
+    } catch (error) {
+        console.error('Lỗi lấy thời tiết:', error);
+    }
+}
+
+function getWeatherIcon(code) {
+    // WMO Weather interpretation codes (https://open-meteo.com/en/docs)
+    const icons = {
+        0: '☀️ Nắng đẹp',
+        1: '🌤️ Ít mây',
+        2: '⛅ Có mây',
+        3: '☁️ Nhiều mây',
+        45: '🌫️ Sương mù',
+        48: '🌫️ Sương giá',
+        51: 'imưa Mưa nhỏ',
+        53: '🌧️ Mưa vừa',
+        55: '🌧️ Mưa dày',
+        61: '☔ Mưa rào nhẹ',
+        63: '☔ Mưa rào vừa',
+        65: '☔ Mưa rào nặng',
+        80: '⛈️ Mưa rào',
+        81: '⛈️ Mưa rào mạnh',
+        82: '⛈️ Mưa rất to',
+        95: '⚡ Dông',
+        96: '⚡ Dông mưa đá',
+        99: '⚡ Dông mưa đá nặng'
+    };
+    return icons[code] || '❓ Không rõ';
+}
+
+// ============================================
 // Mini Map
 // ============================================
 function showMiniMap(lat, lng) {
@@ -1377,6 +1463,29 @@ function captureEvidence() {
         retakeEvidenceBtn.style.display = 'inline-flex';
         removeEvidenceBtn.style.display = 'inline-flex';
 
+        // Display Evidence Text Details
+        const evidenceTextDetails = document.getElementById('evidenceTextDetails');
+        if (evidenceTextDetails) {
+            const now = new Date();
+            const timestamp = now.toLocaleString('vi-VN');
+            const weatherInfo = currentWeather ? `${currentWeather} | 🌡️ ${weatherTemp}°C` : 'N/A';
+
+            // Use full address as requested
+            const addressFull = address || '';
+
+            // Format Lat/Long string
+            const latLongStr = (latitude && longitude) ? `${latitude.toFixed(6)}, ${longitude.toFixed(6)}` : '';
+            const locationInfo = addressFull || (latLongStr || 'Không xác định');
+
+            evidenceTextDetails.innerHTML = `
+                <div><i class="fa-regular fa-clock"></i> <strong>Thời gian:</strong> ${timestamp}</div>
+                <div><i class="fa-solid fa-cloud-sun"></i> <strong>Thời tiết:</strong> ${weatherInfo}</div>
+                <div><i class="fa-solid fa-map-pin"></i> <strong>Vị trí:</strong> ${locationInfo}</div>
+                ${latLongStr ? `<div><i class="fa-solid fa-location-crosshairs"></i> <strong>Tọa độ:</strong> ${latLongStr}</div>` : ''}
+            `;
+            evidenceTextDetails.style.display = 'block';
+        }
+
         showToast('Đã chụp minh chứng!', 'success');
     }, 'image/jpeg', 0.95); // Higher quality
 }
@@ -1389,6 +1498,14 @@ function retakeEvidence() {
 
     evidenceBlob = null;
     evidencePreview.style.display = 'none';
+
+    // Hide Evidence Text Details
+    const evidenceTextDetails = document.getElementById('evidenceTextDetails');
+    if (evidenceTextDetails) {
+        evidenceTextDetails.style.display = 'none';
+        evidenceTextDetails.innerHTML = '';
+    }
+
     evidenceVideo.style.display = 'block';
     retakeEvidenceBtn.style.display = 'none';
     removeEvidenceBtn.style.display = 'none';
@@ -1413,6 +1530,14 @@ function removeEvidence() {
 
     evidenceBlob = null;
     evidencePreview.style.display = 'none';
+
+    // Hide Evidence Text Details
+    const evidenceTextDetails = document.getElementById('evidenceTextDetails');
+    if (evidenceTextDetails) {
+        evidenceTextDetails.style.display = 'none';
+        evidenceTextDetails.innerHTML = '';
+    }
+
     evidenceCameraContainer.style.display = 'none';
     startEvidenceCamBtn.style.display = 'inline-flex';
     captureEvidenceBtn.style.display = 'none';
