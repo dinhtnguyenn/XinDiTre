@@ -1003,15 +1003,17 @@ async function verifyLivenessLoop() {
 
 async function detectFaceAndCapture() {
     // Check if face is present at the moment of capture
+    // If AI model not loaded, skip face detection entirely
     if (!faceModel || !stream) {
         capturePhoto();
+        showToast('Đã chụp ảnh!', 'success');
         return;
     }
 
     // Show spinner
     const btn = document.getElementById('captureBtn');
     const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ Checking...';
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang kiểm tra...';
     btn.disabled = true;
 
     try {
@@ -1025,7 +1027,9 @@ async function detectFaceAndCapture() {
         }
     } catch (e) {
         console.error(e);
-        capturePhoto(); // Fallback
+        // AI error - capture anyway without face check
+        capturePhoto();
+        showToast('Đã chụp ảnh!', 'success');
     } finally {
         btn.innerHTML = originalText;
         btn.disabled = false;
