@@ -1655,3 +1655,58 @@ document.getElementById('startEvidenceCamBtn')?.addEventListener('click', startE
 document.getElementById('captureEvidenceBtn')?.addEventListener('click', captureEvidence);
 document.getElementById('retakeEvidenceBtn')?.addEventListener('click', retakeEvidence);
 document.getElementById('removeEvidenceBtn')?.addEventListener('click', removeEvidence);
+
+// ============================================
+// Helper Functions for Data Retrieval
+// ============================================
+function getStudentInfo() {
+    return {
+        fullname: document.getElementById('fullname')?.value.trim() || 'N/A',
+        mssv: document.getElementById('mssv')?.value.trim() || 'N/A',
+        classSession: document.getElementById('class_session')?.value || 'N/A'
+    };
+}
+
+function getLocationInfo() {
+    const distanceValue = document.getElementById('distanceValue')?.textContent || 'N/A';
+    return {
+        distanceStr: distanceValue === 'N/A' ? 'Không xác định' : `${distanceValue} km`
+    };
+}
+
+function generateInfoHTML(student, location, timestamp, weatherInfo) {
+    return `
+        <div style="margin-bottom: 4px;"><strong>👤 ${student.fullname} - ${student.mssv}</strong></div>
+        <div style="margin-bottom: 4px;">📚 ${student.classSession} | 📏 Cách trường: ${location.distanceStr}</div>
+        <div style="margin-bottom: 4px;">🕐 ${timestamp}</div>
+        <div>${weatherInfo}</div>
+    `;
+}
+
+// ============================================
+// Global Function Exposure & Event Binding
+// ============================================
+// Ensure functions are available globally for inline scripts or debugging
+window.startEvidenceCamera = startEvidenceCamera;
+window.captureEvidence = captureEvidence;
+window.retakeEvidence = retakeEvidence;
+window.removeEvidence = removeEvidence;
+
+// Force re-bind events to ensure they work even if DOM was replaced
+function forceBindEvidenceEvents() {
+    const startBtn = document.getElementById('startEvidenceCamBtn');
+    const captureBtn = document.getElementById('captureEvidenceBtn');
+    const retakeBtn = document.getElementById('retakeEvidenceBtn');
+    const removeBtn = document.getElementById('removeEvidenceBtn');
+
+    if (startBtn) startBtn.onclick = (e) => { e.preventDefault(); startEvidenceCamera(); };
+    if (captureBtn) captureBtn.onclick = (e) => { e.preventDefault(); captureEvidence(); };
+    if (retakeBtn) retakeBtn.onclick = (e) => { e.preventDefault(); retakeEvidence(); };
+    if (removeBtn) removeBtn.onclick = (e) => { e.preventDefault(); removeEvidence(); };
+
+    console.log("Evidence Camera Events Forced Bound");
+}
+
+// Run immediately and on load
+forceBindEvidenceEvents();
+document.addEventListener('DOMContentLoaded', forceBindEvidenceEvents);
