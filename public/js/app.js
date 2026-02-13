@@ -1048,23 +1048,30 @@ function updateCountdown(classSession) {
         if (diff <= 0) {
             // Đã quá hạn - hiển thị quá bao lâu
             const overMs = Math.abs(diff);
-            const overMinutes = Math.floor(overMs / 60000);
+            const overHours = Math.floor(overMs / 3600000);
+            const overMinutes = Math.floor((overMs % 3600000) / 60000);
             const overSeconds = Math.floor((overMs % 60000) / 1000);
 
             countdownLabel.textContent = `⏰ ${sessionShort} — Đã quá hạn (${deadlineTime}):`;
-            countdownTimer.textContent = `${overMinutes}p ${overSeconds}s`;
+            countdownTimer.textContent = overHours > 0
+                ? `${overHours}:${String(overMinutes).padStart(2, '0')}:${String(overSeconds).padStart(2, '0')}`
+                : `${String(overMinutes).padStart(2, '0')}:${String(overSeconds).padStart(2, '0')}`;
             countdownTimer.className = 'countdown-timer expired';
         } else {
             // Còn thời gian - hiển thị countdown
-            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const minutes = Math.floor((diff % 3600000) / 60000);
             const seconds = Math.floor((diff % 60000) / 1000);
 
             countdownLabel.textContent = `⏰ ${sessionShort} — Hạn xin đi trễ đến ${deadlineTime}:`;
-            countdownTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            countdownTimer.textContent = hours > 0
+                ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+                : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
-            if (minutes >= 10) {
+            const totalMinutes = hours * 60 + minutes;
+            if (totalMinutes >= 10) {
                 countdownTimer.className = 'countdown-timer safe';
-            } else if (minutes >= 5) {
+            } else if (totalMinutes >= 5) {
                 countdownTimer.className = 'countdown-timer';
             } else {
                 countdownTimer.className = 'countdown-timer urgent';
