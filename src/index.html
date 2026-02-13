@@ -21,6 +21,47 @@
 </head>
 
 <body>
+    <!-- Permission Gate Dialog -->
+    <div id="permissionGate" class="modal" style="z-index: 99999;">
+        <div class="modal-content" style="max-width: 480px; text-align: center; padding: 28px 32px;">
+            <i class="fa-solid fa-shield-halved"
+                style="font-size: 2.2rem; color: #1a73e8; margin-bottom: 10px; display: block;"></i>
+            <h2 style="font-size: 1.2rem; font-weight: 700; margin: 0 0 6px;">Cấp quyền truy cập</h2>
+            <p style="color: #666; margin: 0 0 22px; font-size: 0.88rem;">Vui lòng cấp quyền <b>Camera</b> và <b>Vị
+                    trí</b> để sử dụng</p>
+            <!-- Camera -->
+            <div id="permCamera"
+                style="display: flex; align-items: center; padding: 12px 16px; border-radius: 12px; background: #f5f5f5; margin-bottom: 10px;">
+                <i class="fa-solid fa-camera"
+                    style="font-size: 1.3rem; color: #1a73e8; width: 32px; text-align: center; flex-shrink: 0;"></i>
+                <div style="flex: 1; text-align: left; margin: 0 14px; white-space: nowrap; overflow: hidden;">
+                    <div style="font-weight: 600; font-size: 0.93rem;">Camera</div>
+                    <div id="permCameraStatus" style="font-size: 0.78rem; color: #999;">Chưa cấp quyền</div>
+                </div>
+                <button id="permCameraBtn" class="btn btn-submit"
+                    style="width: auto; padding: 7px 18px; font-size: 0.82rem; flex-shrink: 0; white-space: nowrap; border-radius: 8px;">Cấp
+                    quyền</button>
+            </div>
+            <!-- Location -->
+            <div id="permLocation"
+                style="display: flex; align-items: center; padding: 12px 16px; border-radius: 12px; background: #f5f5f5; margin-bottom: 16px;">
+                <i class="fa-solid fa-location-dot"
+                    style="font-size: 1.3rem; color: #1a73e8; width: 32px; text-align: center; flex-shrink: 0;"></i>
+                <div style="flex: 1; text-align: left; margin: 0 14px; white-space: nowrap; overflow: hidden;">
+                    <div style="font-weight: 600; font-size: 0.93rem;">Vị trí</div>
+                    <div id="permLocationStatus" style="font-size: 0.78rem; color: #999;">Chưa cấp quyền</div>
+                </div>
+                <button id="permLocationBtn" class="btn btn-submit"
+                    style="width: auto; padding: 7px 18px; font-size: 0.82rem; flex-shrink: 0; white-space: nowrap; border-radius: 8px;">Cấp
+                    quyền</button>
+            </div>
+            <p id="permNote" style="font-size: 0.78rem; color: #ef4444; display: none; margin: 0; line-height: 1.4;">
+                <i class="fa-solid fa-triangle-exclamation"></i> Quyền đã bị chặn. Vào <b>Cài đặt trình duyệt →
+                    Quyền</b> để cho phép.
+            </p>
+        </div>
+    </div>
+
     <div class="container">
         <header class="header">
             <div class="logo">

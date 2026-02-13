@@ -663,6 +663,148 @@ function showLocationError(message) {
 }
 
 // ============================================
+// Permission Gate (Kiểm tra & yêu cầu quyền)
+// ============================================
+let permCameraGranted = false;
+let permLocationGranted = false;
+
+async function checkAndRequestPermissions() {
+    const gate = document.getElementById('permissionGate');
+    if (!gate) return;
+
+    // Kiểm tra quyền Camera
+    let cameraState = 'prompt';
+    try {
+        const camResult = await navigator.permissions.query({ name: 'camera' });
+        cameraState = camResult.state;
+    } catch (e) {
+        // Trình duyệt không hỗ trợ query camera permission, sẽ kiểm tra bằng getUserMedia
+    }
+
+    // Kiểm tra quyền Location
+    let locationState = 'prompt';
+    try {
+        const locResult = await navigator.permissions.query({ name: 'geolocation' });
+        locationState = locResult.state;
+    } catch (e) { }
+
+    permCameraGranted = cameraState === 'granted';
+    permLocationGranted = locationState === 'granted';
+
+    // Nếu cả 2 đã cấp quyền → bỏ qua dialog
+    if (permCameraGranted && permLocationGranted) {
+        gate.classList.remove('show');
+        gate.style.display = 'none';
+        return;
+    }
+
+    // Hiển thị dialog
+    gate.style.display = 'flex';
+    gate.classList.add('show');
+    updatePermissionUI('camera', cameraState);
+    updatePermissionUI('location', locationState);
+
+    // Gắn sự kiện cho nút cấp quyền
+    document.getElementById('permCameraBtn').addEventListener('click', requestCameraPermission);
+    document.getElementById('permLocationBtn').addEventListener('click', requestLocationPermission);
+}
+
+function updatePermissionUI(type, state) {
+    const isCamera = type === 'camera';
+    const statusEl = document.getElementById(isCamera ? 'permCameraStatus' : 'permLocationStatus');
+    const btnEl = document.getElementById(isCamera ? 'permCameraBtn' : 'permLocationBtn');
+    const rowEl = document.getElementById(isCamera ? 'permCamera' : 'permLocation');
+    const noteEl = document.getElementById('permNote');
+
+    if (state === 'granted') {
+        statusEl.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Đã cấp quyền';
+        statusEl.style.color = '#16a34a';
+        btnEl.innerHTML = '<i class="fa-solid fa-check"></i> Đã cấp';
+        btnEl.disabled = true;
+        btnEl.style.opacity = '0.7';
+        btnEl.style.pointerEvents = 'none';
+        rowEl.style.background = 'rgba(22, 163, 74, 0.08)';
+        if (isCamera) permCameraGranted = true;
+        else permLocationGranted = true;
+    } else if (state === 'denied') {
+        statusEl.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color:#ef4444;"></i> Đã bị chặn';
+        statusEl.style.color = '#ef4444';
+        btnEl.textContent = 'Thử lại';
+        btnEl.disabled = false;
+        btnEl.style.opacity = '1';
+        btnEl.style.pointerEvents = 'auto';
+        rowEl.style.background = 'rgba(239, 68, 68, 0.08)';
+        if (noteEl) noteEl.style.display = 'block';
+    } else {
+        statusEl.textContent = 'Chưa cấp quyền';
+        statusEl.style.color = '#999';
+        btnEl.textContent = 'Cấp quyền';
+        btnEl.disabled = false;
+        btnEl.style.opacity = '1';
+        btnEl.style.pointerEvents = 'auto';
+    }
+
+    // Tự động đóng dialog nếu đủ quyền
+    if (permCameraGranted && permLocationGranted) {
+        setTimeout(() => {
+            const gate = document.getElementById('permissionGate');
+            gate.classList.remove('show');
+            setTimeout(() => { gate.style.display = 'none'; }, 300);
+            showToast('Đã cấp đủ quyền! Bạn có thể sử dụng ứng dụng.', 'success');
+        }, 500);
+    }
+}
+
+async function requestCameraPermission() {
+    const btn = document.getElementById('permCameraBtn');
+    btn.textContent = 'Đang xin...';
+    btn.disabled = true;
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        // Cấp quyền thành công → dừng stream ngay
+        stream.getTracks().forEach(track => track.stop());
+        updatePermissionUI('camera', 'granted');
+    } catch (err) {
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            updatePermissionUI('camera', 'denied');
+        } else {
+            updatePermissionUI('camera', 'denied');
+            showToast('Không thể truy cập Camera. Vui lòng kiểm tra thiết bị.', 'error');
+        }
+    }
+}
+
+function requestLocationPermission() {
+    const btn = document.getElementById('permLocationBtn');
+    btn.textContent = 'Đang xin...';
+    btn.disabled = true;
+
+    if (!navigator.geolocation) {
+        updatePermissionUI('location', 'denied');
+        showToast('Trình duyệt không hỗ trợ GPS', 'error');
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        () => {
+            updatePermissionUI('location', 'granted');
+            // Gọi lại getLocation để lấy dữ liệu đầy đủ
+            getLocation();
+        },
+        (error) => {
+            if (error.code === error.PERMISSION_DENIED) {
+                updatePermissionUI('location', 'denied');
+            } else {
+                updatePermissionUI('location', 'denied');
+                showToast('Không thể lấy vị trí. Vui lòng thử lại.', 'error');
+            }
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+}
+
+// ============================================
 // Form Submit
 // ============================================
 async function handleSubmit(e) {
@@ -1221,6 +1363,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Live clock
     updateIndexClock();
     setInterval(updateIndexClock, 1000);
+
+    // Kiểm tra quyền Camera & Vị trí
+    checkAndRequestPermissions();
 
     // Load saved MSSV from localStorage
     const savedMssv = localStorage.getItem('saved_mssv');
