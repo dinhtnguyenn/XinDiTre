@@ -3,13 +3,33 @@
 // ============================================
 let authToken = null;
 
+// Lấy ngày hiện tại dạng YYYY-MM-DD (theo timezone VN)
+function getTodayVN() {
+    const now = new Date();
+    // Sử dụng Vietnam timezone
+    const options = { timeZone: 'Asia/Ho_Chi_Minh', year: 'numeric', month: '2-digit', day: '2-digit' };
+    const parts = new Intl.DateTimeFormat('en-CA', options).formatToParts(now);
+    const year = parts.find(p => p.type === 'year').value;
+    const month = parts.find(p => p.type === 'month').value;
+    const day = parts.find(p => p.type === 'day').value;
+    return `${year}-${month}-${day}`;
+}
+
 function checkAuth() {
     const savedToken = localStorage.getItem('adminToken');
-    if (savedToken) {
+    const loginDate = localStorage.getItem('adminLoginDate');
+
+    // Kiểm tra session: nếu ngày đăng nhập khác ngày hiện tại → tự động logout
+    if (savedToken && loginDate === getTodayVN()) {
         authToken = savedToken;
         showAdminContent();
         fetchRequests();
         fetchStatistics();
+    } else if (savedToken) {
+        // Đã qua ngày mới → xóa session cũ
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminLoginDate');
+        showToast('Phiên đăng nhập đã hết hạn! Vui lòng đăng nhập lại.', 'error');
     }
 }
 
@@ -31,6 +51,7 @@ async function handleLogin(e) {
         if (result.success) {
             authToken = btoa(password);
             localStorage.setItem('adminToken', authToken);
+            localStorage.setItem('adminLoginDate', result.loginDate || getTodayVN());
             showAdminContent();
             fetchRequests();
             fetchStatistics();
@@ -47,6 +68,7 @@ async function handleLogin(e) {
 function logout() {
     authToken = null;
     localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminLoginDate');
     document.getElementById('loginModal').classList.add('show');
     document.getElementById('adminContent').style.display = 'none';
     document.getElementById('password').value = '';
@@ -60,6 +82,15 @@ function showAdminContent() {
 function getAuthHeaders() {
     return { 'Authorization': `Basic ${authToken}` };
 }
+
+// Kiểm tra mỗi phút: nếu qua ngày mới → tự động logout
+setInterval(() => {
+    const loginDate = localStorage.getItem('adminLoginDate');
+    if (authToken && loginDate && loginDate !== getTodayVN()) {
+        logout();
+        showToast('🔒 Đã qua ngày mới! Phiên đăng nhập hết hạn.', 'error');
+    }
+}, 60000); // Kiểm tra mỗi 60 giây
 
 // ============================================
 // Variables & State
@@ -959,6 +990,27 @@ function exportToExcel() {
 
 
 // ============================================
+// Login Clock (Đồng hồ trang đăng nhập)
+// ============================================
+function updateLoginClock() {
+    const now = new Date();
+    const dateEl = document.getElementById('loginDate');
+    const timeEl = document.getElementById('loginTime');
+    if (!dateEl || !timeEl) return;
+
+    const dateOptions = { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Ho_Chi_Minh' };
+    const dateStr = now.toLocaleDateString('vi-VN', dateOptions);
+    dateEl.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+
+    const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Ho_Chi_Minh', hour12: false };
+    timeEl.textContent = now.toLocaleTimeString('vi-VN', timeOptions);
+}
+
+// ============================================
 // Initialize
 // ============================================
-document.addEventListener('DOMContentLoaded', checkAuth);
+document.addEventListener('DOMContentLoaded', () => {
+    checkAuth();
+    updateLoginClock();
+    setInterval(updateLoginClock, 1000);
+});

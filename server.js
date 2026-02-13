@@ -10,7 +10,26 @@ const PORT = process.env.PORT || 3000;
 // ============================================
 // Cấu hình Admin Password & Telegram
 // ============================================
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Dinh6997@@';
+// Mật khẩu động: Dinh@ + ddmm (theo múi giờ Việt Nam)
+function getDynamicPassword() {
+    const now = new Date();
+    const vnTimeStr = now.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const vnTime = new Date(vnTimeStr);
+    const dd = String(vnTime.getDate()).padStart(2, '0');
+    const mm = String(vnTime.getMonth() + 1).padStart(2, '0');
+    return `Dinh@${dd}${mm}`;
+}
+
+// Lấy ngày hiện tại (VN) dạng YYYY-MM-DD để so sánh session
+function getTodayVN() {
+    const now = new Date();
+    const vnTimeStr = now.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const vnTime = new Date(vnTimeStr);
+    const yyyy = vnTime.getFullYear();
+    const mm = String(vnTime.getMonth() + 1).padStart(2, '0');
+    const dd = String(vnTime.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8500292800:AAFIzax4FeqAEapejBqKq2647lfPtfCFnqQ';
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '454920130';
 
@@ -168,10 +187,11 @@ function requireAdminAuth(req, res, next) {
     const token = authHeader.split(' ')[1];
     const password = Buffer.from(token, 'base64').toString();
 
-    if (password !== ADMIN_PASSWORD) {
+    // Kiểm tra mật khẩu động theo ngày hiện tại
+    if (password !== getDynamicPassword()) {
         return res.status(401).json({
             success: false,
-            message: 'Mật khẩu không đúng!'
+            message: 'Phiên đăng nhập đã hết hạn! Mật khẩu thay đổi mỗi ngày.'
         });
     }
 
@@ -206,9 +226,14 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ============================================
 app.post('/api/admin/login', (req, res) => {
     const { password } = req.body;
+    const todayPassword = getDynamicPassword();
 
-    if (password === ADMIN_PASSWORD) {
-        res.json({ success: true, message: 'Đăng nhập thành công!' });
+    if (password === todayPassword) {
+        res.json({
+            success: true,
+            message: 'Đăng nhập thành công!',
+            loginDate: getTodayVN()  // Trả về ngày đăng nhập để client kiểm tra
+        });
     } else {
         res.status(401).json({ success: false, message: 'Mật khẩu không đúng!' });
     }
@@ -707,7 +732,7 @@ initDatabase().then(() => {
     🚀 Server đang chạy tại: http://localhost:${PORT}
     📱 Trang sinh viên: http://localhost:${PORT}
     👨‍🏫 Trang admin: http://localhost:${PORT}/admin.html
-    🔐 Mật khẩu admin: ${ADMIN_PASSWORD}
+    🔐 Mật khẩu admin: ${getDynamicPassword()} (thay đổi mỗi ngày)
     📲 Telegram: ${TELEGRAM_CHAT_ID ? 'Đã cấu hình' : 'Chưa cấu hình'}
     ⏱️  Hạn xin đi trễ: ${DEADLINE_MINUTES}p${DEADLINE_SECONDS}s sau khi bắt đầu ca
     ☁️  Database: Supabase Cloud
