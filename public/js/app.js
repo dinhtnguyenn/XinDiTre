@@ -1179,6 +1179,23 @@ function suggestClassSession() {
 }
 
 // ============================================
+// Live Clock (Đồng hồ trang index)
+// ============================================
+function updateIndexClock() {
+    const now = new Date();
+    const dateEl = document.getElementById('indexDate');
+    const timeEl = document.getElementById('indexTime');
+    if (!dateEl || !timeEl) return;
+
+    const dateOptions = { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Asia/Ho_Chi_Minh' };
+    const dateStr = now.toLocaleDateString('vi-VN', dateOptions);
+    dateEl.textContent = dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+
+    const timeOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Asia/Ho_Chi_Minh', hour12: false };
+    timeEl.textContent = now.toLocaleTimeString('vi-VN', timeOptions);
+}
+
+// ============================================
 // Initialize
 // ============================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -1188,6 +1205,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize new features
     updateLunarDate();
     initHelpModal();
+
+    // Live clock
+    updateIndexClock();
+    setInterval(updateIndexClock, 1000);
 
     // Load saved MSSV from localStorage
     const savedMssv = localStorage.getItem('saved_mssv');
