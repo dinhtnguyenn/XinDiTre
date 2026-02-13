@@ -1038,6 +1038,11 @@ function updateCountdown(classSession) {
         const deadline = new Date(now);
         deadline.setHours(schedule.hour, schedule.minute + 14, 30, 0);
 
+        // Tên ca ngắn gọn, vd: "Ca 5"
+        const sessionShort = classSession.split(' (')[0];
+        // Giờ hạn chót, vd: "16:34"
+        const deadlineTime = `${String(deadline.getHours()).padStart(2, '0')}:${String(deadline.getMinutes()).padStart(2, '0')}`;
+
         const diff = deadline - now;
 
         if (diff <= 0) {
@@ -1046,7 +1051,7 @@ function updateCountdown(classSession) {
             const overMinutes = Math.floor(overMs / 60000);
             const overSeconds = Math.floor((overMs % 60000) / 1000);
 
-            countdownLabel.textContent = '⏰ Đã quá hạn:';
+            countdownLabel.textContent = `⏰ ${sessionShort} — Đã quá hạn (${deadlineTime}):`;
             countdownTimer.textContent = `${overMinutes}p ${overSeconds}s`;
             countdownTimer.className = 'countdown-timer expired';
         } else {
@@ -1054,7 +1059,7 @@ function updateCountdown(classSession) {
             const minutes = Math.floor(diff / 60000);
             const seconds = Math.floor((diff % 60000) / 1000);
 
-            countdownLabel.textContent = '⏰ Còn lại để xin đi trễ:';
+            countdownLabel.textContent = `⏰ ${sessionShort} — Hạn xin đi trễ đến ${deadlineTime}:`;
             countdownTimer.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
             if (minutes >= 10) {
